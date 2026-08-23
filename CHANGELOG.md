@@ -6,6 +6,44 @@ are the living design docs; this file tracks what changed and when.
 
 ## [Unreleased]
 
+### Changed
+- Corpus pulled incrementally from 40 -> 100 -> 200 records (checking
+  GitHub rate limit and eval-query term coverage at each step, per
+  explicit instruction), via one-off `PR_LIMIT=100 ISSUE_LIMIT=100`
+  env-override runs — `config.py`'s 20/20 dev defaults are unchanged.
+- `data/eval/test_queries.json` / `docs/PLAN.md` — rewrote 7 of the 10
+  comparison queries to ground them in the real corpus (each entry's
+  `note` field explains what it's grounded in). Query 7 was repurposed
+  from a hypothetical name-collision stress test to a real one this
+  corpus exhibits: `ingestion.clean()` normalizes every bot-authored
+  record's author to `"unknown"`, so 14 unrelated automated PRs collapse
+  onto one contributor node.
+- `app/core/evaluation.py` — added `summarize_results()` /
+  `print_kpi_summary()`: a side-by-side vector-vs-graph observability KPI
+  table (queries run/answered/refused, mean faithfulness/relevance,
+  refusal-test accuracy, mean/p95 latency), called automatically at the
+  end of every `run_comparison()` run.
+- `app/core/evaluation.py` — fixed a real scoring bug: `_judge()`'s
+  `max_tokens=200` didn't leave headroom for Claude Opus 5's adaptive
+  thinking, which shares the same token budget as the visible `SCORE:`
+  line — intermittently truncating the judge's response before it wrote
+  the score and silently falling through to a 0.0 default even for
+  well-cited, clearly-grounded answers. First full run showed mean
+  faithfulness 0.320/0.485 despite manual inspection showing the
+  opposite; fixed by raising `max_tokens` to 1024 and setting
+  `output_config={"effort": "low"}`, re-verified against real retrieved
+  context before re-running.
+- `docs/EVAL_RESULTS.md` — full rewrite with the real comparison: 5 of 10
+  queries got an answer from at least one arm (up from 0 before the
+  corpus/query fixes). Findings: the graph arm's entity matcher requires
+  a query to literally name a PR#/username/module rather than describe
+  it, flipping 2 expected-graph queries to vector; an unresolved
+  `StreamClosedError` exact-match miss on both arms; the "unknown"
+  entity-collapse query refused rather than demonstrating the merge
+  (the matcher's earlier "unknown" exclusion is a defensive design
+  choice that also masks this probe); and a likely vector-threshold
+  regression at the larger corpus size worth re-tuning.
+
 ### Added
 - `app/core/evaluation.py` — implemented: `score_faithfulness()` and
   `score_relevance()` are single-call Claude LLM-judge scores (0.0-1.0,

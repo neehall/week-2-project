@@ -54,15 +54,22 @@ empty subgraph. If both arms are below threshold, refuse outright.
 
 ## The 10-query comparison set
 
+Grounded in the real ~200-record corpus (`data/eval/test_queries.json` —
+each entry's `note` field explains what it's grounded in). An earlier
+version of this table was written as generic templates before any corpus
+existed; 9 of 10 turned out to have zero occurrences once real data was
+pulled (see docs/EVAL_RESULTS.md for that finding). Queries 1-7 below were
+rewritten against actual corpus content; 8-10 already worked as written.
+
 | # | Query type | Example | Expected edge |
 |---|---|---|---|
-| 1 | Single-hop factual | Who authored PR #4213? | tie |
-| 2 | Multi-hop relational | Who reviewed the PR that fixed the memory leak, and what module does it touch? | graph |
-| 3 | Aggregation / list | List every contributor to the retrievers module this quarter. | graph |
-| 4 | Semantic / exploratory | Why did the team move away from the original conversation buffer design? | vector |
-| 5 | Exact-match / lexical | Which PR references error code `ECONNRESET`? | vector (hybrid) |
-| 6 | Decision provenance | What was decided about the retriever interface change, and who approved it? | graph |
-| 7 | Ambiguous entity | What did Alex work on last month? (multiple contributors named Alex) | stress test |
+| 1 | Single-hop factual | Who authored PR #39832? | tie |
+| 2 | Multi-hop relational | Who reviewed the PR that resolved postponed annotations in StructuredTool, and what module does it touch? | graph |
+| 3 | Aggregation / list | List every contributor to the agents module. | graph |
+| 4 | Semantic / exploratory | Why do shell subprocess resources leak when a run is interrupted mid-session? | vector |
+| 5 | Exact-match / lexical | Which PR references `StreamClosedError`? | vector (hybrid) |
+| 6 | Decision provenance | What was decided about adding standard model exception types, and who approved it? | graph |
+| 7 | Ambiguous entity | What has the "unknown" contributor been working on recently? (14 unrelated bot PRs collapse onto one node — see ingestion.clean()) | stress test |
 | 8 | Cross-document synthesis | Summarize the discussion across all issues tagged `streaming`. | tie |
 | 9 | Out-of-corpus (refusal test) | Who approved LangChain's pricing model? | must refuse |
 | 10 | Plausible but unindexed (refusal test) | What did the team decide about the Rust rewrite? | must refuse |

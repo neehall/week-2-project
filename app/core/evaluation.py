@@ -45,7 +45,17 @@ def _judge(prompt: str, model: str = config.GENERATION_MODEL) -> float:
     client = generation.get_client()
     response = client.messages.create(
         model=model,
-        max_tokens=200,
+        # Grading is a simple task, but Claude Opus 5 has adaptive thinking
+        # on by default and thinking tokens share this budget with the
+        # visible SCORE line. A too-small max_tokens intermittently lets
+        # the model reason itself out of budget before writing the score,
+        # which silently fell through to the 0.0 "no match" fallback below
+        # — confirmed by re-running an identical judge call twice and
+        # getting a thinking block once, a plain text answer the other
+        # time. effort="low" keeps reasoning minimal for this task; the
+        # larger max_tokens is headroom in case it reasons anyway.
+        max_tokens=1024,
+        output_config={"effort": "low"},
         system=(
             "You are a strict grader. Respond with exactly one line: "
             "SCORE: <a number between 0.0 and 1.0>. You may add one short "
@@ -172,4 +182,73 @@ def run_comparison(queries: list[dict], vector_store, graph_store) -> list[Query
             graph_score.correctly_refused = graph_score.refused
         scores.append(graph_score)
 
+    print_kpi_summary(scores)
     return scores
+
+
+def _mean(values: list[float]) -> float | None:
+    return sum(values) / len(values) if values else None
+
+
+def _percentile(sorted_values: list[float], p: float) -> float | None:
+    if not sorted_values:
+        return None
+    idx = min(len(sorted_values) - 1, round(p * (len(sorted_values) - 1)))
+    return sorted_values[idx]
+
+
+def summarize_results(scores: list[QueryScore]) -> dict:
+    """Aggregate per-arm observability KPIs from a run_comparison() output."""
+    summary: dict = {}
+    for arm in ("vector", "graph"):
+        arm_scores = [s for s in scores if s.arm == arm]
+        answered = [s for s in arm_scores if not s.refused]
+        refusal_tests = [s for s in arm_scores if s.correctly_refused is not None]
+        latencies = sorted(s.latency_seconds for s in arm_scores)
+
+        summary[arm] = {
+            "n_queries": len(arm_scores),
+            "n_answered": len(answered),
+            "n_refused": len(arm_scores) - len(answered),
+            "mean_faithfulness": _mean([s.faithfulness for s in answered]),
+            "mean_relevance": _mean([s.relevance for s in answered]),
+            "refusal_test_accuracy": _mean(
+                [1.0 if s.correctly_refused else 0.0 for s in refusal_tests]
+            ),
+            "mean_latency_seconds": _mean(latencies),
+            "p95_latency_seconds": _percentile(latencies, 0.95),
+        }
+    return summary
+
+
+def print_kpi_summary(scores: list[QueryScore]) -> None:
+    """Print a side-by-side vector-vs-graph KPI table. Called automatically
+    at the end of run_comparison() so every eval run surfaces these
+    numbers without the caller having to remember to ask for them.
+    """
+    summary = summarize_results(scores)
+
+    def fmt(value) -> str:
+        if value is None:
+            return "n/a"
+        if isinstance(value, float):
+            return f"{value:.3f}"
+        return str(value)
+
+    rows = [
+        ("queries run", "n_queries"),
+        ("answered", "n_answered"),
+        ("refused", "n_refused"),
+        ("mean faithfulness", "mean_faithfulness"),
+        ("mean relevance", "mean_relevance"),
+        ("refusal-test accuracy", "refusal_test_accuracy"),
+        ("mean latency (s)", "mean_latency_seconds"),
+        ("p95 latency (s)", "p95_latency_seconds"),
+    ]
+
+    header = f"{'--- Observability KPIs ---':30s} {'vector':>12s} {'graph':>12s}"
+    print(f"\n{header}")
+    print("-" * len(header))
+    for label, key in rows:
+        print(f"{label:30s} {fmt(summary['vector'][key]):>12s} {fmt(summary['graph'][key]):>12s}")
+    print()

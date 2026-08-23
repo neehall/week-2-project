@@ -2,59 +2,66 @@
   {
     "id": 1,
     "type": "single_hop_factual",
-    "query": "Who authored PR #4213?",
+    "query": "Who authored PR #39832?",
     "expected_edge": "tie",
-    "is_refusal_test": false
+    "is_refusal_test": false,
+    "note": "Grounded in the real 200-record corpus (PR 39832, 'release(core): 1.6.1', author eyurtsev). Original template referenced a fabricated PR #4213 with zero corpus grounding — see docs/EVAL_RESULTS.md."
   },
   {
     "id": 2,
     "type": "multi_hop_relational",
-    "query": "Who reviewed the PR that fixed the memory leak, and what module does it touch?",
+    "query": "Who reviewed the PR that resolved postponed annotations in StructuredTool, and what module does it touch?",
     "expected_edge": "graph",
-    "is_refusal_test": false
+    "is_refusal_test": false,
+    "note": "Grounded in PR 39602 (reviewers mdrxy, sydney-runkle; module 'tools'). Original template's 'memory leak' PR didn't exist — the real memory-leak hits in this corpus are unreviewed issues, not a reviewed PR."
   },
   {
     "id": 3,
     "type": "aggregation_list",
-    "query": "List every contributor to the retrievers module this quarter.",
+    "query": "List every contributor to the agents module.",
     "expected_edge": "graph",
-    "is_refusal_test": false
+    "is_refusal_test": false,
+    "note": "Grounded in real 'agents' module PRs (authors: ccurme, syyy44, Yigtwxx, hntrl). Original template named a 'retrievers module' with only 1 loosely-matching hit in this corpus slice."
   },
   {
     "id": 4,
     "type": "semantic_exploratory",
-    "query": "Why did the team move away from the original conversation buffer design?",
+    "query": "Why do shell subprocess resources leak when a run is interrupted mid-session?",
     "expected_edge": "vector",
-    "is_refusal_test": false
+    "is_refusal_test": false,
+    "note": "Grounded in issue 39700's design-rationale discussion (weakref.finalize only runs on normal completion, not on interrupt paths). Original template's 'conversation buffer design' had zero corpus grounding."
   },
   {
     "id": 5,
     "type": "exact_match_lexical",
-    "query": "Which PR references error code ECONNRESET?",
+    "query": "Which PR references StreamClosedError?",
     "expected_edge": "vector_hybrid",
-    "is_refusal_test": false
+    "is_refusal_test": false,
+    "note": "Grounded in PRs 39325/39324. Original template's ECONNRESET error code doesn't appear anywhere in this corpus."
   },
   {
     "id": 6,
     "type": "decision_provenance",
-    "query": "What was decided about the retriever interface change, and who approved it?",
+    "query": "What was decided about adding standard model exception types, and who approved it?",
     "expected_edge": "graph",
-    "is_refusal_test": false
+    "is_refusal_test": false,
+    "note": "Grounded in PR 39538 (reviewers ccurme, hntrl, thushanth-bengre-langchain; module 'agents'). Original template referenced a 'retriever interface change' with zero corpus grounding, and this corpus slice has no RFC-labeled records at all."
   },
   {
     "id": 7,
     "type": "ambiguous_entity",
-    "query": "What did Alex work on last month?",
+    "query": "What has the 'unknown' contributor been working on recently?",
     "expected_edge": "stress_test",
     "is_refusal_test": false,
-    "note": "Multiple contributors named Alex — should disambiguate or say so, not guess."
+    "note": "Repurposed to test a REAL entity-resolution failure present in this corpus: ingestion.clean() normalizes every bot-authored record's author to 'unknown' (see app/core/ingestion.py BOT_SUFFIXES handling). 14 unrelated automated 'chore(model-profiles): refresh model profile data' PRs all collapse onto that single node. The original template ('multiple contributors named Alex') assumed a name collision this corpus doesn't contain -- this is the same failure class (entity resolution merging distinct things into one node, docs/PLAN.md's failure-points table) but the actual mechanism this corpus exhibits, not a hypothetical one."
   },
   {
     "id": 8,
     "type": "cross_document_synthesis",
     "query": "Summarize the discussion across all issues tagged streaming.",
     "expected_edge": "tie",
-    "is_refusal_test": false
+    "is_refusal_test": false,
+    "note": "17 hits in the 200-record corpus (up from 3 at 40 records). Kept as-is; already the one original-template query with real grounding."
   },
   {
     "id": 9,

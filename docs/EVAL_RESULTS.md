@@ -1,83 +1,178 @@
 # 10-Query Comparison — Results & Write-up
 
-Run against the real ingested corpus (20 PRs + 20 issues/RFCs, most-recently-
-updated `langchain-ai/langchain` activity as of 2026-08-21 — see
-`data/corpus/raw/`) via `app.core.evaluation.run_comparison()`. Raw output:
-`data/eval/results.json`.
+Run against a real 200-record corpus (100 merged PRs + 100 issues/RFCs,
+most-recently-updated `langchain-ai/langchain` activity as of 2026-08-21 —
+pulled incrementally, see "Corpus" below) via
+`app.core.evaluation.run_comparison()`. Raw output: `data/eval/results.json`.
+Query set: `data/eval/test_queries.json` (each entry's `note` field explains
+what it's grounded in — see "Query set" below for why it was rewritten).
 
-## Headline result: 20/20 refused
+## Observability KPIs
 
-Every query, on both arms, refused. Score breakdown:
+```
+--- Observability KPIs ---           vector        graph
+--------------------------------------------------------
+queries run                              10           10
+answered                                   3            2
+refused                                    7            8
+mean faithfulness                      0.963        0.975
+mean relevance                         0.550        0.950
+refusal-test accuracy                  1.000        1.000
+mean latency (s)                       3.763        1.408
+p95 latency (s)                       12.019       11.607
+```
 
-| Query | Type | Expected edge | Vector | Graph |
+(`app.core.evaluation.print_kpi_summary()` — called automatically at the
+end of every `run_comparison()` — produces this table for any future run.)
+
+Faithfulness is high for both arms *when they answer* — both are well-cited
+against their own retrieved evidence when they don't refuse. The real
+differentiator here is **who answers at all**, not answer quality once they
+do: only 5 of 10 queries got an answer from at least one arm.
+
+## Per-query result
+
+| # | Type | Expected | Vector | Graph | What happened |
+|---|---|---|---|---|---|
+| 1 | single_hop_factual | tie | refused | **answered** (1.00/1.00) | Vector's reranked score fell below threshold despite the PR being in-corpus — see "Vector arm regression" below. |
+| 2 | multi_hop_relational | graph | **answered** (0.97/0.40) | refused | Flipped from expected. The query describes the PR ("resolved postponed annotations in StructuredTool") without naming a PR#/username/module literally — the graph arm's entity matcher can't find it. |
+| 3 | aggregation_list | graph | refused | **answered** (0.95/0.90) | Matches expectation — graph traversal is the natural fit for "list every contributor to module X". |
+| 4 | semantic_exploratory | vector | **answered** (0.97/0.95) | refused | Matches expectation cleanly — a "why does X happen" design-rationale question is exactly the vector arm's strength. |
+| 5 | exact_match_lexical | vector_hybrid | refused | refused | **Unexpected refusal on both arms** — see "StreamClosedError miss" below. |
+| 6 | decision_provenance | graph | **answered** (0.95/0.30) | refused | Flipped, same root cause as #2 — query describes rather than names the entity. |
+| 7 | ambiguous_entity | stress_test | refused | refused | Didn't test what it was designed to — see "Ambiguous entity" below. |
+| 8 | cross_document_synthesis | tie | refused | refused | Both correctly refuse but for different reasons — see original analysis (aggregation phrasing vs. no label/tag entity type). |
+| 9 | out_of_corpus | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
+| 10 | plausible_but_unindexed | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
+
+## Findings
+
+### 1. The graph arm's entity matcher is stricter than the query types it's expected to handle
+
+Queries 2 and 6 both flipped from the expected "graph" edge to vector
+answering instead. Root cause: `retrieval_graph._match_entities()`
+(`app/core/retrieval_graph.py`) only recognizes a query as touching the
+graph if it contains a literal PR/issue number (`#1234`), a contributor
+username substring, or a module name substring. A query that *describes*
+a PR by what it does ("the PR that resolved postponed annotations in
+StructuredTool") rather than naming it gives the entity matcher nothing to
+latch onto — `matched_nodes` stays 0, and the graph arm refuses even though
+the answer is sitting right there in the graph.
+
+This is a real, previously undocumented failure point, distinct from the
+ones already in `docs/PLAN.md`'s table: it's not weak traversal or a bad
+confidence signal, it's that **entity recognition happens before
+traversal even starts**, and it's currently name/number-matching only —
+no semantic entity resolution. A fix would need either an LLM-based entity
+extraction pass over the query, or a hybrid: fall back to vector retrieval
+to *find* the entity, then hand its ID to the graph arm for traversal.
+
+### 2. StreamClosedError miss (query 5)
+
+Both arms refused a query built specifically to test exact-match lexical
+retrieval, despite `StreamClosedError` genuinely appearing in PRs
+39325/39324's bodies (confirmed via direct grep before writing this
+query). Not yet root-caused — candidates: the term may have landed in a
+fenced code block that `chunking.split_prose_and_code()` isolated into a
+segment whose surrounding context diluted the BM25/dense signal, or the
+term may have been split across a chunk boundary. Flagged as a genuine
+open failure point rather than papered over.
+
+### 3. Ambiguous entity (query 7) didn't test what it was designed to
+
+The rewritten query 7 targets a real entity-resolution issue in this
+corpus: `ingestion.clean()` normalizes every bot-authored record's author
+to `"unknown"`, so 14 unrelated `chore(model-profiles): refresh model
+profile data` PRs all collapse onto one contributor node. The query asked
+what that node "worked on," expecting either a nonsensical merged answer
+(demonstrating the failure) or graceful disambiguation.
+
+What actually happened: `retrieval_graph._match_entities()` explicitly
+excludes `"unknown"` from contributor matching (`app/core/
+retrieval_graph.py` — added specifically because "unknown" is a cleaning
+placeholder, not a real entity), so the query refuses immediately. That's
+arguably *better* behavior than dumping 14 unrelated PRs as one person's
+work — but it means the underlying entity-collapse problem is still
+latent in the graph (that merge is real and would surface the moment any
+other query legitimately needed to traverse through that node) while this
+particular probe can't observe it. Worth noting as a case where a
+defensive design choice made earlier in the session (excluding a known
+placeholder value) had a side effect on this eval.
+
+### 4. Vector arm regression on query 1 between corpus sizes
+
+At 40 records (an earlier run this session), "checkpointer msgpack
+serialization"-style queries scored ~0.995+ against `VECTOR_CONFIDENCE_
+THRESHOLD` (0.5). At 200 records / 1167 chunks, query 1 ("Who authored PR
+#39832?") — a record that unambiguously exists in-corpus — refused on the
+vector arm. A larger, noisier candidate pool plausibly dilutes the
+reranked top score for a short, low-content chunk (a release-PR title has
+little text to rerank against). Not deeply investigated here; worth a
+closer look before tuning `VECTOR_CONFIDENCE_THRESHOLD` for a "final"
+number, since the threshold was originally calibrated on a much smaller
+corpus.
+
+### 5. A real scoring bug was caught and fixed mid-run
+
+The first full run at this corpus size returned mean faithfulness 0.320
+(vector) / 0.485 (graph) despite manual inspection showing well-cited,
+clearly-grounded answers. Root cause: `evaluation._judge()`'s
+`max_tokens=200` didn't leave headroom for Claude Opus 5's adaptive
+thinking, which shares the same token budget as the visible `SCORE:` line
+— intermittently truncating the response before it reached the score,
+silently falling through to the "no match" 0.0 default. Confirmed by
+replaying the same judge call twice and getting a thinking block once, a
+plain-text answer the other time. Fixed by raising `max_tokens` to 1024
+and setting `output_config={"effort": "low"}` (grading is a simple task,
+per the model's own guidance). Re-verified against the real retrieved
+context for the two queries that triggered it (0.95, 0.97 — matching
+manual read) before re-running the full comparison.
+
+## Corpus
+
+Pulled incrementally, checking GitHub rate limit and query/corpus term
+coverage after each step, per explicit instruction this session:
+
+| Step | PR_LIMIT / ISSUE_LIMIT | Records | Time | Rate limit |
 |---|---|---|---|---|
-| 1 | single_hop_factual | tie | refused | refused |
-| 2 | multi_hop_relational | graph | refused | refused |
-| 3 | aggregation_list | graph | refused | refused |
-| 4 | semantic_exploratory | vector | refused | refused |
-| 5 | exact_match_lexical | vector_hybrid | refused | refused |
-| 6 | decision_provenance | graph | refused | refused |
-| 7 | ambiguous_entity | stress_test | refused | refused |
-| 8 | cross_document_synthesis | tie | refused | refused |
-| 9 | out_of_corpus (refusal test) | must refuse | **refused ✓** | **refused ✓** |
-| 10 | plausible_but_unindexed (refusal test) | must refuse | **refused ✓** | **refused ✓** |
+| 1 | 20 / 20 | 40 | 123s | comfortable |
+| 2 | 50 / 50 | 100 | 123s | comfortable |
+| 3 | 100 / 100 | 200 | 251s | comfortable |
 
-**This is not a meaningful vector-vs-graph comparison.** It's a corpus
-coverage failure, and it was predicted before running: the 10 queries were
-written as generic templates (PR #4213, "memory leak", "retrievers module",
-"conversation buffer", `ECONNRESET`, "retriever interface", a contributor
-named "Alex") before any real data was pulled. A pre-run check confirmed 9 of
-10 reference terms have **zero occurrences** in the actual 40-record corpus
-— only "streaming" (query 8) appears at all (3 hits).
+Coverage plateaued at step 3 for terms tied to fabricated specifics (a
+literal PR number, a contributor named "Alex", an invented error code) —
+confirming further scaling wouldn't help those, which is why the query set
+was rewritten instead of scaled further. `config.py`'s `PR_LIMIT`/
+`ISSUE_LIMIT` defaults remain 20/20 for fast dev iteration; this eval run
+used a one-off larger pull via env override (`PR_LIMIT=100 ISSUE_LIMIT=100
+python -m app.core.ingestion`), not a change to those defaults.
 
-Queries 9-10 are the only two that "pass" in the sense of testing what they
-were designed to test — they're deliberately out-of-corpus, and both arms
-correctly refused rather than hallucinating. That's a real, if narrow,
-positive result: **the refusal path works.**
+## Query set
 
-## A real finding hiding in the noise: query 8
+The original 10 queries were written as generic templates before any
+corpus was pulled. A pre-run check found 9 of 10 reference terms (PR
+#4213, "memory leak" *as a reviewed PR*, "retrievers module", "conversation
+buffer", `ECONNRESET`, "retriever interface", a contributor named "Alex")
+had zero or near-zero grounding in the real data. Queries 1-7 were rewritten
+against real corpus content (see each entry's `note` field in
+`data/eval/test_queries.json` and the updated table in `docs/PLAN.md`);
+8-10 already worked as originally written.
 
-Query 8 ("Summarize the discussion across all issues tagged `streaming`")
-is the one case where relevant content *does* exist in the corpus (3 issues:
-#38074, #35436, #39333), yet both arms still refused — for different reasons
-that are each individually correct given their own design:
+## Bottom line for the deliverable
 
-- **Vector arm**: the reranked top score fell below
-  `VECTOR_CONFIDENCE_THRESHOLD` (0.5) — the query's phrasing ("all issues
-  tagged X") doesn't closely match any single chunk's content, since no
-  chunk *is* a tag-aggregation summary.
-- **Graph arm**: `retrieval_graph._match_entities()` only recognizes PR/issue
-  numbers, contributor usernames, and module names (`app/core/
-  retrieval_graph.py`) — it has no concept of an issue *label* like
-  "streaming" as an entity type, so `matched_nodes` is always 0 for a
-  tag-based query regardless of corpus content.
+With a grounded query set, the comparison now shows real signal:
 
-This is a legitimate instance of two failure points already flagged in
-`docs/PLAN.md`'s "Failure points to test for" table: the graph arm's
-entity-matching is narrower than the query types it's expected to handle
-(no label/tag node type exists in the schema), and aggregation-style queries
-in general are exactly where a small, template-matched chunk set struggles
-without either a wider retrieval net or genuine multi-document synthesis.
-
-## Why this happened
-
-`PR_LIMIT`/`ISSUE_LIMIT` default to 20 (dropped from 100 during the
-ingestion-hang fix, see CHANGELOG) and pull the *most recently updated*
-records — a narrow, recent slice of a very large, long-lived repo. The
-10-query set was written against no actual data (a reasonable template at
-plan time), and was never reconciled against what ingestion actually pulled
-before this run.
-
-## What this means for the deliverable
-
-The pipeline mechanics are proven — ingestion, chunking, both retrieval
-arms, the confidence gate, generation, and the full LangGraph wiring have
-each been verified independently against real data (see CHANGELOG, commits
-`ba6522b` through the graph_flow commit). What's *not* yet demonstrated is
-the actual vector-vs-graph comparison the project is about, because the
-query set and the corpus don't overlap.
-
-Two ways to fix this, not done in this pass (explicitly deferred — see
-conversation): rewrite the 10 queries to match the real 40-record corpus,
-or pull a larger/targeted corpus so the existing queries have a chance of
-landing. Either one is a prerequisite for a real comparison write-up.
+- **Graph wins outright** on the query type it's supposed to (aggregation,
+  query 3) and on a factual lookup once it has an unambiguous ID to seize
+  on (query 1).
+- **Vector wins outright** on semantic/exploratory reasoning (query 4), as
+  predicted, and also picked up two queries that were *expected* to favor
+  graph (2, 6) purely because the graph arm's entity matcher couldn't
+  recognize the entity from a descriptive query — a real, documented
+  limitation rather than the graph arm losing on merits.
+- **The refusal path works** — both correct-refusal tests (9, 10) pass on
+  both arms.
+- **Two open items remain before this is "done"**: the StreamClosedError
+  miss (finding 2) isn't root-caused, and the vector-arm threshold
+  (finding 4) was calibrated on a much smaller corpus and may need
+  retuning now.

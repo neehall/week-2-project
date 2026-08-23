@@ -7,6 +7,17 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/common/config.py` — filled in: repo/paths, chunk size (500 tokens,
+  midpoint of docs/PLAN.md's 400-600 range), top-k, confidence threshold,
+  env var names.
+- `app/core/ingestion.py` — implemented: pulls merged PRs and substantive
+  issues/RFCs from `langchain-ai/langchain` via PyGithub, resolves
+  reviewers/linked-issues/dominant-module-path per record, strips bot
+  noise and HTML comments in `clean()` without touching fenced code
+  blocks, writes `data/corpus/raw/{prs,issues_and_rfcs}.jsonl`. Verified
+  against the live API (unauthenticated smoke test, 5 PRs + 5 issues) —
+  full ingestion run needs a `GITHUB_TOKEN` in `.env` to avoid the 60
+  req/hr unauthenticated rate limit.
 - Initial project scaffold: `README.md`, `requirements.txt`, `.env.example`,
   `run.sh`, `.gitignore`.
 - `docs/SCOPE.md` — corpus choice, one-liner primer, filled-out framework.

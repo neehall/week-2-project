@@ -15,8 +15,12 @@ are the living design docs; this file tracks what changed and when.
   citable text (chunk_id-tagged for the vector arm, the graph arm's
   already-serialized subgraph as-is); the system prompt requires an
   inline citation on every factual claim and an explicit "context
-  doesn't support this" instead of guessing. Not yet tested end-to-end —
-  blocked on an `ANTHROPIC_API_KEY` value.
+  doesn't support this" instead of guessing. Verified end-to-end against
+  both arms with a real `ANTHROPIC_API_KEY`: the vector arm produced a
+  grounded, per-claim-cited answer from real issue chunks and correctly
+  flagged what the retrieved context couldn't answer; the graph arm
+  produced a correctly-cited summary of a contributor's PRs from the
+  serialized subgraph.
 - `app/core/graph_build.py` / `retrieval_graph.py` — graph arm implemented
   end-to-end on a NetworkX in-memory backend (no server needed;
   `GraphStore(backend="neo4j")` documented as a TODO for later).

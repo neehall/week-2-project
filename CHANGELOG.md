@@ -6,7 +6,44 @@ are the living design docs; this file tracks what changed and when.
 
 ## [Unreleased]
 
+### Added
+- `app/Home.py` — wired up the Streamlit chat UI to the compiled
+  `graph_flow.build_graph()`, cached per-server-process with
+  `st.cache_resource` (builds both indices once from `data/corpus/raw/`,
+  not per query). Renders the cited answer/refusal plus a collapsible
+  "Retrieval details" panel (vector top score, graph matched-node count,
+  refused flag) for observability in the UI itself.
+- `screenshots/` — two screenshots of the working app (loaded state, and
+  a real aggregation query answered), captured by actually driving the
+  app with Playwright/headless Chromium rather than just checking it
+  imports.
+
+### Fixed
+- `run.sh` — `streamlit run app/Home.py` only puts `app/`'s own directory
+  on `sys.path`, not the project root, so `from app.common import
+  config` (and every `app.core.*` import) raised `ModuleNotFoundError`
+  the moment `Home.py` was actually wired up. Fixed by exporting
+  `PYTHONPATH` to the project root before launching. Caught by actually
+  running the app end-to-end for a screenshot, not just `python -c
+  "import app.Home"` — that import path doesn't reproduce the bug since
+  it's not how Streamlit resolves the entry script's sys.path.
+- `app/common/config.py` — `GENERATION_MAX_TOKENS` (1024) was too small
+  once the corpus grew to 200 records: a graph-arm aggregation answer
+  over a large subgraph got cut off mid-word. Also caught by actually
+  driving the wired-up app and reading a real answer rather than only
+  checking `refused`/scores — a truncated-but-non-empty answer doesn't
+  trip any existing check. Raised to 4096; re-ran the full 10-query
+  comparison after the fix (`docs/EVAL_RESULTS.md` updated with the
+  post-fix numbers — no query flipped between answered/refused, but
+  faithfulness/relevance improved slightly on the already-answered
+  queries now that nothing is cut off mid-thought).
+
 ### Changed
+- `README.md` — full rewrite from the pre-implementation skeleton
+  version: corrected prerequisites (local embeddings + NetworkX, no
+  Neo4j/Nebius required by default; Anthropic key instead), install/run
+  steps including the ingestion pull, project structure reflecting what
+  actually exists, and the design-patterns checklist marked complete.
 - Corpus pulled incrementally from 40 -> 100 -> 200 records (checking
   GitHub rate limit and eval-query term coverage at each step, per
   explicit instruction), via one-off `PR_LIMIT=100 ISSUE_LIMIT=100`

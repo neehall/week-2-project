@@ -68,8 +68,13 @@ GRAPH_MAX_HOPS = 2
 # Claude via the official Anthropic SDK — generation.py. Chosen over the
 # original Nebius-hosted default since NEBIUS_API_KEY isn't set; needs
 # ANTHROPIC_API_KEY in .env instead. See docs/PLAN.md's generation section.
+# 1024 was too small once the corpus grew to 200 records — an aggregation
+# answer over a large subgraph (e.g. "list every contributor to module X")
+# got cut off mid-word. Bumped with headroom; still comfortably under the
+# non-streaming SDK's request-timeout risk zone (see the claude-api skill's
+# max_tokens guidance — streaming is only needed much higher than this).
 GENERATION_MODEL = "claude-opus-5"
-GENERATION_MAX_TOKENS = 1024
+GENERATION_MAX_TOKENS = 4096
 
 # --- Confidence gate --------------------------------------------------------
 

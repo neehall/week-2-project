@@ -15,11 +15,11 @@ what it's grounded in — see "Query set" below for why it was rewritten).
 queries run                              10           10
 answered                                   3            2
 refused                                    7            8
-mean faithfulness                      0.963        0.975
-mean relevance                         0.550        0.950
+mean faithfulness                      0.973        0.980
+mean relevance                         0.600        0.950
 refusal-test accuracy                  1.000        1.000
-mean latency (s)                       3.763        1.408
-p95 latency (s)                       12.019       11.607
+mean latency (s)                       3.505        2.000
+p95 latency (s)                       12.853       16.479
 ```
 
 (`app.core.evaluation.print_kpi_summary()` — called automatically at the
@@ -35,11 +35,11 @@ do: only 5 of 10 queries got an answer from at least one arm.
 | # | Type | Expected | Vector | Graph | What happened |
 |---|---|---|---|---|---|
 | 1 | single_hop_factual | tie | refused | **answered** (1.00/1.00) | Vector's reranked score fell below threshold despite the PR being in-corpus — see "Vector arm regression" below. |
-| 2 | multi_hop_relational | graph | **answered** (0.97/0.40) | refused | Flipped from expected. The query describes the PR ("resolved postponed annotations in StructuredTool") without naming a PR#/username/module literally — the graph arm's entity matcher can't find it. |
-| 3 | aggregation_list | graph | refused | **answered** (0.95/0.90) | Matches expectation — graph traversal is the natural fit for "list every contributor to module X". |
+| 2 | multi_hop_relational | graph | **answered** (0.97/0.50) | refused | Flipped from expected. The query describes the PR ("resolved postponed annotations in StructuredTool") without naming a PR#/username/module literally — the graph arm's entity matcher can't find it. |
+| 3 | aggregation_list | graph | refused | **answered** (0.96/0.90) | Matches expectation — graph traversal is the natural fit for "list every contributor to module X". |
 | 4 | semantic_exploratory | vector | **answered** (0.97/0.95) | refused | Matches expectation cleanly — a "why does X happen" design-rationale question is exactly the vector arm's strength. |
 | 5 | exact_match_lexical | vector_hybrid | refused | refused | **Unexpected refusal on both arms** — see "StreamClosedError miss" below. |
-| 6 | decision_provenance | graph | **answered** (0.95/0.30) | refused | Flipped, same root cause as #2 — query describes rather than names the entity. |
+| 6 | decision_provenance | graph | **answered** (0.98/0.35) | refused | Flipped, same root cause as #2 — query describes rather than names the entity. |
 | 7 | ambiguous_entity | stress_test | refused | refused | Didn't test what it was designed to — see "Ambiguous entity" below. |
 | 8 | cross_document_synthesis | tie | refused | refused | Both correctly refuse but for different reasons — see original analysis (aggregation phrasing vs. no label/tag entity type). |
 | 9 | out_of_corpus | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
@@ -112,7 +112,23 @@ closer look before tuning `VECTOR_CONFIDENCE_THRESHOLD` for a "final"
 number, since the threshold was originally calibrated on a much smaller
 corpus.
 
-### 5. A real scoring bug was caught and fixed mid-run
+### 5. Generation was silently truncating on large subgraphs (found while wiring the Streamlit UI)
+
+`config.GENERATION_MAX_TOKENS` was 1024 — fine at the 40-record corpus
+size, but at 200 records a graph-arm aggregation answer (query 3's "list
+every contributor to the agents module") got cut off mid-word
+(`[contributor:ccur`). Caught by actually driving the wired-up app end to
+end (`app/Home.py`) and screenshotting a real answer, not just checking
+`refused`/scores — a truncated-but-non-empty answer doesn't trip any of
+the existing checks. Fixed by raising `GENERATION_MAX_TOKENS` to 4096;
+re-verified the same query now completes naturally and self-reports its
+own completeness caveat ("this list is limited to the supplied
+subgraph..."). Re-ran the full 10-query comparison after the fix — the
+numbers above are post-fix; no query flipped between answered/refused,
+but faithfulness/relevance on the already-answered queries improved
+slightly now that nothing is cut off mid-thought.
+
+### 6. A real scoring bug was caught and fixed mid-run
 
 The first full run at this corpus size returned mean faithfulness 0.320
 (vector) / 0.485 (graph) despite manual inspection showing well-cited,

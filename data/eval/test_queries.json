@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "type": "single_hop_factual",
+    "query": "Who authored PR #4213?",
+    "expected_edge": "tie",
+    "is_refusal_test": false
+  },
+  {
+    "id": 2,
+    "type": "multi_hop_relational",
+    "query": "Who reviewed the PR that fixed the memory leak, and what module does it touch?",
+    "expected_edge": "graph",
+    "is_refusal_test": false
+  },
+  {
+    "id": 3,
+    "type": "aggregation_list",
+    "query": "List every contributor to the retrievers module this quarter.",
+    "expected_edge": "graph",
+    "is_refusal_test": false
+  },
+  {
+    "id": 4,
+    "type": "semantic_exploratory",
+    "query": "Why did the team move away from the original conversation buffer design?",
+    "expected_edge": "vector",
+    "is_refusal_test": false
+  },
+  {
+    "id": 5,
+    "type": "exact_match_lexical",
+    "query": "Which PR references error code ECONNRESET?",
+    "expected_edge": "vector_hybrid",
+    "is_refusal_test": false
+  },
+  {
+    "id": 6,
+    "type": "decision_provenance",
+    "query": "What was decided about the retriever interface change, and who approved it?",
+    "expected_edge": "graph",
+    "is_refusal_test": false
+  },
+  {
+    "id": 7,
+    "type": "ambiguous_entity",
+    "query": "What did Alex work on last month?",
+    "expected_edge": "stress_test",
+    "is_refusal_test": false,
+    "note": "Multiple contributors named Alex — should disambiguate or say so, not guess."
+  },
+  {
+    "id": 8,
+    "type": "cross_document_synthesis",
+    "query": "Summarize the discussion across all issues tagged streaming.",
+    "expected_edge": "tie",
+    "is_refusal_test": false
+  },
+  {
+    "id": 9,
+    "type": "out_of_corpus",
+    "query": "Who approved LangChain's pricing model?",
+    "expected_edge": "must_refuse",
+    "is_refusal_test": true
+  },
+  {
+    "id": 10,
+    "type": "plausible_but_unindexed",
+    "query": "What did the team decide about the Rust rewrite?",
+    "expected_edge": "must_refuse",
+    "is_refusal_test": true,
+    "note": "No such discussion exists in the indexed corpus."
+  }
+]

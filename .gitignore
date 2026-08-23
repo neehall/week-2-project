@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
+.vscode/
+BUILD_WRITEUP.txt
+
+# Vector store indices / caches — regenerable from data/corpus
+*.index
+.chroma/
+chroma_db/
+
+# Raw pulled corpus — regenerable via app/core/ingestion.py, keep repo small
+data/corpus/raw/
+
+# API keys / secrets
+.env

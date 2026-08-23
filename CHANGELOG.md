@@ -7,6 +7,10 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `docs/DEMO_SCRIPT.md` — a ~4-5 minute demo walkthrough; each query is
+  picked to demonstrate one specific finding from `docs/EVAL_RESULTS.md`
+  (vector win, graph win, the entity-matcher limitation found by this
+  eval, and a correct refusal) rather than an arbitrary sample.
 - `app/Home.py` — wired up the Streamlit chat UI to the compiled
   `graph_flow.build_graph()`, cached per-server-process with
   `st.cache_resource` (builds both indices once from `data/corpus/raw/`,

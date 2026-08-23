@@ -1,0 +1,202 @@
+[
+  {
+    "query_id": 1,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 4.04,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 1,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 2,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.24,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 2,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 3,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.22,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 3,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 4,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.16,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 4,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 5,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.13,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 5,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 6,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.14,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 6,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 7,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.14,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 7,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 8,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.14,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 8,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 9,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.14,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 9,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 10,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.14,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  },
+  {
+    "query_id": 10,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.0,
+    "refused": true,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+  }
+]

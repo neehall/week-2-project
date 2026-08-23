@@ -7,6 +7,34 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/core/evaluation.py` — implemented: `score_faithfulness()` and
+  `score_relevance()` are single-call Claude LLM-judge scores (0.0-1.0,
+  parsed from a `SCORE: <n>` line); `run_comparison()` runs the 10-query
+  set through both arms independently — each arm applies its own refusal
+  rule (vector: top score below threshold; graph: no matched nodes)
+  rather than `confidence_gate`'s combined OR, since the point here is
+  comparing each arm's own behavior, not the merged app-facing decision.
+  `generation.py`'s client accessor renamed `_get_client` ->
+  `get_client()` (public) so evaluation.py can reuse the same client
+  instance instead of opening a second one.
+- `docs/EVAL_RESULTS.md` / `data/eval/results.json` — ran the real
+  10-query set (`data/eval/test_queries.json`) against the real 40-record
+  corpus end-to-end. Result: **all 20 arm-runs (10 queries x 2 arms)
+  refused** — not a meaningful vector-vs-graph comparison, and predicted
+  before running: 9 of the 10 queries reference terms (PR #4213, "memory
+  leak", "retrievers module", a contributor named "Alex", etc.) that were
+  written as generic templates before any corpus was pulled and have zero
+  occurrences in the actual data. Queries 9-10 (deliberately
+  out-of-corpus) correctly refused on both arms — the refusal path
+  itself works. Query 8 ("streaming") is the one case where matching
+  content does exist (3 issues) yet both arms still refused, for two
+  different legitimate reasons: the vector arm's reranked score fell
+  below threshold on the aggregation-style phrasing, and the graph arm's
+  entity matcher has no concept of an issue *label* as an entity type —
+  a real instance of failure points already flagged in docs/PLAN.md.
+  Full write-up and root cause in docs/EVAL_RESULTS.md. Fixing the
+  query/corpus mismatch (rewriting the queries or widening ingestion) is
+  explicitly deferred, not done in this pass.
 - `app/graph_flow.py` — implemented: wires `parse_query -> {retrieve_vector,
   retrieve_graph} -> confidence_gate -> generate_or_refuse` as a compiled
   LangGraph `StateGraph`. `build_graph(vector_store, graph_store)` binds

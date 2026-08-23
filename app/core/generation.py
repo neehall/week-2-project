@@ -28,7 +28,11 @@ SYSTEM_PROMPT = (
 _client: anthropic.Anthropic | None = None
 
 
-def _get_client() -> anthropic.Anthropic:
+def get_client() -> anthropic.Anthropic:
+    """Shared, lazily-created Anthropic client — also used by
+    evaluation.py's LLM-judge calls, so both modules reuse one client
+    instance instead of each opening their own.
+    """
     global _client
     if _client is None:
         _client = anthropic.Anthropic()  # resolves ANTHROPIC_API_KEY from env
@@ -47,7 +51,7 @@ def generate_answer(
 ) -> str:
     """Generate a cited answer from one arm's retrieval result."""
     context = _format_context(retrieval_result)
-    client = _get_client()
+    client = get_client()
 
     response = client.messages.create(
         model=model,

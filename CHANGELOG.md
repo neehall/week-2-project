@@ -7,6 +7,19 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/core/chunking.py` — implemented: `split_prose_and_code()` splits a
+  cleaned record body on fenced ``` blocks (same convention as
+  `ingestion.clean()`); `chunk_record()` token-splits each segment via
+  `RecursiveCharacterTextSplitter.from_tiktoken_encoder` sized by
+  `chunk_tokens`, prepends the record title to the lead-in prose segment,
+  and assigns each `Chunk` a `chunk_id`; `chunk_records()` batches this
+  over a list of records. Verified end-to-end against a live 20-PR +
+  20-issue ingestion pull (152 chunks from 40 records).
+- `docs/PLAN.md` — "Failure points to test for" section: entity
+  resolution, relationship extraction quality, traversal scope, subgraph
+  serialization, staleness, weak graph-arm confidence signal, and losing
+  to vector-RAG on purely semantic queries — each mapped to a specific
+  eval-set query to test it against.
 - `app/common/config.py` / `app/core/ingestion.py` — ingestion reliability
   fixes after a run hung for 30+ min: `config.py` now actually calls
   `load_dotenv()` (was a listed dependency but never invoked, so `.env`

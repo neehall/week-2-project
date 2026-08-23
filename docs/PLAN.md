@@ -89,3 +89,20 @@ mode.
 5. Write and run the 10-query set
 6. Score and write up the comparison
 7. Package: project doc, demo video, GitHub assets
+
+## Failure points to test for
+
+These are where a GraphRAG pipeline actually breaks, in the order they
+tend to bite. Each one is silent by default — nothing errors, the answer
+is just quietly wrong — so the eval set above needs to be read with these
+in mind, not just scored.
+
+| Failure point | What goes wrong | How to test for it |
+|---|---|---|
+| Entity resolution | Two mentions of the same person split into separate nodes (different spellings), or two different people merged into one (same first name). Traversal from that point on is wrong. | Query 7 (the ambiguous "Alex" query) is built to surface this directly — check whether the graph arm disambiguates or silently picks one. |
+| Relationship extraction | LLM-based edge extraction misses implicit relationships (a decision referenced obliquely, not stated as "X approved Y") or invents plausible-sounding ones not actually in the source. | Manually audit a random sample of extracted edges against the source PR/issue text before trusting the graph. |
+| Traversal scope | Too few hops misses the answer; too many pulls in a sprawling, mostly-irrelevant subgraph that dilutes the signal or overflows context. | Sweep hop count (1 vs. 2 vs. 3) on queries 2, 3, and 6 specifically — the multi-hop and aggregation cases — and compare answer quality. |
+| Subgraph → text serialization | Flattening nodes and edges into prose loses structure — which edges are causally connected vs. just co-located — so the LLM has to reconstruct relationships from an already-lossy rendering. | Print the serialized subgraph for a few queries and read it cold: could someone unfamiliar with the graph answer the query from that text alone? |
+| Staleness | The graph is a one-time snapshot (see the ingestion note above) — a PR merged after ingestion simply doesn't exist in it, with no mechanism to flag the gap. | Note the ingestion timestamp in the write-up as an explicit limitation, not an afterthought. |
+| Weak confidence signal | The vector arm has a clean confidence proxy (reranked similarity score); the graph arm's `matched_nodes > 0` is coarser — nodes can match but the traversal still returns junk, so the gate under-refuses. | Check the graph arm's refusal accuracy on queries 9-10 specifically against the vector arm's — a gap here means the threshold needs work, not just the graph. |
+| Loses on pure semantic queries | GraphRAG tends to lose to vector-RAG on exploratory "why" questions with no real relationship structure to traverse — it does extra work to arrive at what dense retrieval gets in one hop. | Query 4 is designed to test exactly this — if the graph arm wins there too, the query set is written oddly or the graph's semantic content is unusually rich. |

@@ -7,6 +7,23 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/core/vector_store.py` / `retrieval_vector.py` / `confidence_gate.py`
+  — vector arm implemented end-to-end: `HybridVectorStore` wraps a Chroma
+  dense collection + a `rank_bm25.BM25Okapi` sparse index over the same
+  chunks, fused via `reciprocal_rank_fusion`; `retrieve()` reranks the
+  fused top ~20 with a `cross-encoder/ms-marco-MiniLM-L-6-v2`
+  cross-encoder, sigmoid-normalizing its raw logit output to a 0-1 score
+  comparable against `confidence_gate`'s threshold; `confidence_gate.py`
+  now reads its threshold/message from `config.py` instead of a
+  duplicate hardcoded constant that had drifted (0.65 vs. 0.5).
+  Embedding model switched to a local `all-MiniLM-L6-v2`
+  (sentence-transformers, no API key needed) rather than the
+  Nebius-hosted default, with chunk size dropped 500 -> 250 tokens to
+  match its 384 dims per docs/PLAN.md's capacity table; swap back once
+  `NEBIUS_API_KEY` is set. Verified against the real 40-record/202-chunk
+  corpus: paraphrased in-corpus queries score ~0.995-0.999, out-of-corpus
+  queries score ~0.0003-0.11, and the gate correctly answers one and
+  refuses the other.
 - `app/core/chunking.py` — implemented: `split_prose_and_code()` splits a
   cleaned record body on fenced ``` blocks (same convention as
   `ingestion.clean()`); `chunk_record()` token-splits each segment via

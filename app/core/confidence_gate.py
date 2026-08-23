@@ -8,12 +8,14 @@ doesn't know. This gate is a real branch in the LangGraph state machine
 
 from __future__ import annotations
 
+from app.common import config
 
-VECTOR_SCORE_THRESHOLD = 0.65  # tune against eval results; see docs/PLAN.md
-REFUSAL_MESSAGE = (
-    "I couldn't find this in the LangChain repo data I've indexed. "
-    "Try rephrasing, or this may be outside what I've ingested."
-)
+# Single source of truth lives in config.py (VECTOR_CONFIDENCE_THRESHOLD) —
+# tune it there against eval results; see docs/PLAN.md. Re-exported here
+# under the old name so existing imports of confidence_gate.VECTOR_SCORE_
+# THRESHOLD keep working.
+VECTOR_SCORE_THRESHOLD = config.VECTOR_CONFIDENCE_THRESHOLD
+REFUSAL_MESSAGE = config.REFUSAL_MESSAGE
 
 
 def should_refuse(vector_result, graph_result) -> bool:

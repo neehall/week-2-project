@@ -49,11 +49,12 @@ TEST_QUERIES_PATH = EVAL_DIR / "test_queries.json"
 
 # --- Chunking / embedding ------------------------------------------------
 
-# Default embedding model is text-embedding-3-small-equivalent (1536-dim) via
-# Nebius; see docs/PLAN.md's chunk-size-to-embedding-capacity table.
-EMBEDDING_MODEL = "text-embedding-3-small"
-EMBEDDING_DIMENSIONS = 1536
-CHUNK_SIZE_TOKENS = 500       # midpoint of the 400-600 recommended range
+# Local embedding model (sentence-transformers, no API key needed) — swap
+# for text-embedding-3-small (1536-dim, via Nebius) once NEBIUS_API_KEY is
+# set; see docs/PLAN.md's chunk-size-to-embedding-capacity table for both.
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+EMBEDDING_DIMENSIONS = 384
+CHUNK_SIZE_TOKENS = 250       # midpoint of the 200-300 recommended range for 384-dim
 CHUNK_OVERLAP_TOKENS = 50
 
 # --- Retrieval ------------------------------------------------------------

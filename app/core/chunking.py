@@ -2,8 +2,9 @@
 
 See docs/PLAN.md, "Matching chunk size to embedding capacity":
 a 512-token chunk on a 384-dim embedding wastes the chunk's content; a
-2000-token chunk on a small model loses signal. Default here targets
-text-embedding-3-small (1536 dims) -> 400-600 token chunks.
+2000-token chunk on a small model loses signal. Default here reads from
+app.common.config (currently all-MiniLM-L6-v2, 384 dims -> 200-300 token
+chunks) so chunk size and embedding model stay in sync in one place.
 
 Code blocks are chunked separately from prose — exact identifiers inside
 code (function names, error strings) are what dense retrieval is weakest
@@ -16,8 +17,10 @@ from dataclasses import dataclass
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-DEFAULT_CHUNK_TOKENS = 500  # matches a 1536-dim embedding model; see docs/PLAN.md
-DEFAULT_CHUNK_OVERLAP = 50
+from app.common import config
+
+DEFAULT_CHUNK_TOKENS = config.CHUNK_SIZE_TOKENS
+DEFAULT_CHUNK_OVERLAP = config.CHUNK_OVERLAP_TOKENS
 
 
 @dataclass

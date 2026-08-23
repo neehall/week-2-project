@@ -16,8 +16,13 @@ PyGithub>=2.3.0
 # Chunking / doc loading
 langchain-text-splitters>=0.2.0
 
-# Embeddings — Nebius is OpenAI-compatible, so the openai client covers both
+# Embeddings — kept for a future swap back to Nebius (OpenAI-compatible);
+# not on the active path while EMBEDDING_MODEL is a local sentence-transformers
+# model (see app.common.config).
 openai>=1.0.0
+
+# Generation — Claude, via the official Anthropic SDK
+anthropic>=0.40.0
 
 # Vector store
 chromadb>=0.5.0

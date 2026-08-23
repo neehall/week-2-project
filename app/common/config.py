@@ -63,6 +63,14 @@ VECTOR_TOP_K = 5              # final top-k after fusion + rerank
 RERANK_CANDIDATE_POOL = 20    # width of the pre-rerank candidate set
 GRAPH_MAX_HOPS = 2
 
+# --- Generation ---------------------------------------------------------
+
+# Claude via the official Anthropic SDK — generation.py. Chosen over the
+# original Nebius-hosted default since NEBIUS_API_KEY isn't set; needs
+# ANTHROPIC_API_KEY in .env instead. See docs/PLAN.md's generation section.
+GENERATION_MODEL = "claude-opus-5"
+GENERATION_MAX_TOKENS = 1024
+
 # --- Confidence gate --------------------------------------------------------
 
 # Below this reranked similarity score, the vector arm refuses rather than
@@ -78,6 +86,7 @@ REFUSAL_MESSAGE = (
 # --- Env var names (values live in .env, never here) ------------------------
 
 GITHUB_TOKEN_ENV = "GITHUB_TOKEN"
+ANTHROPIC_API_KEY_ENV = "ANTHROPIC_API_KEY"
 NEBIUS_API_KEY_ENV = "NEBIUS_API_KEY"
 NEBIUS_BASE_URL_ENV = "NEBIUS_BASE_URL"
 NEO4J_URI_ENV = "NEO4J_URI"

@@ -7,6 +7,16 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/core/generation.py` — implemented: calls Claude via the official
+  `anthropic` SDK (`config.GENERATION_MODEL`, default `claude-opus-5`),
+  swapped in for the originally-scoped Nebius-hosted model since
+  `NEBIUS_API_KEY` isn't set — needs `ANTHROPIC_API_KEY` in `.env`
+  instead. `_format_context()` renders either arm's retrieval result as
+  citable text (chunk_id-tagged for the vector arm, the graph arm's
+  already-serialized subgraph as-is); the system prompt requires an
+  inline citation on every factual claim and an explicit "context
+  doesn't support this" instead of guessing. Not yet tested end-to-end —
+  blocked on an `ANTHROPIC_API_KEY` value.
 - `app/core/graph_build.py` / `retrieval_graph.py` — graph arm implemented
   end-to-end on a NetworkX in-memory backend (no server needed;
   `GraphStore(backend="neo4j")` documented as a TODO for later).

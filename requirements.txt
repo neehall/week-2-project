@@ -28,9 +28,10 @@ rank-bm25>=0.2.2
 # Reranking
 sentence-transformers>=2.2.0   # cross-encoder reranker
 
-# Graph store — pick one:
-neo4j>=5.20.0                  # if running Neo4j (local Docker or Aura free tier)
-# networkx>=3.2                # in-memory alternative, no server required
+# Graph store — using networkx (in-memory, no server) for now; graph_build.py's
+# GraphStore(backend="neo4j") is a documented TODO if that's swapped in later.
+networkx>=3.2
+# neo4j>=5.20.0                 # server-backed alternative, not implemented yet
 
 # Evaluation
 ragas>=0.1.0

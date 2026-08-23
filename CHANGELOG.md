@@ -7,6 +7,24 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/core/graph_build.py` / `retrieval_graph.py` — graph arm implemented
+  end-to-end on a NetworkX in-memory backend (no server needed;
+  `GraphStore(backend="neo4j")` documented as a TODO for later).
+  `extract_entities_and_relations()` builds contributor/pr/issue/rfc/module
+  nodes and authored/reviewed/merged/decided_in/discusses edges straight
+  from the structured metadata PyGithub already gave us (no LLM
+  extraction needed for this pass) — issues/RFCs don't get a
+  file-diff-derived `module_path` from ingestion, so `_infer_module_path()`
+  falls back to keyword-matching the record text against the vocabulary
+  of module names seen in the PRs. `retrieval_graph.retrieve()`
+  entity-matches PR/issue numbers, contributor usernames, and module
+  names out of the query text, then traverses `max_hops` via
+  `GraphStore.ego_subgraph()` and serializes the result to text.
+  Verified against the real 40-record corpus: 77 nodes (well past the
+  20+ requirement), correct multi-hop traversal from a contributor to
+  their PRs/reviewers/modules, and `matched_nodes == 0` on an
+  out-of-corpus query — confirmed both arms feed `confidence_gate` and
+  answer/refuse correctly on the same two test queries.
 - `app/core/vector_store.py` / `retrieval_vector.py` / `confidence_gate.py`
   — vector arm implemented end-to-end: `HybridVectorStore` wraps a Chroma
   dense collection + a `rank_bm25.BM25Okapi` sparse index over the same

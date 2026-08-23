@@ -7,6 +7,36 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `docs/PROJECT_WRITEUP.md` / `docs/PROJECT_WRITEUP.docx` — full project
+  write-up (overview, architecture, dataset, prompts used, every
+  iteration this session went through, and learnings/observations),
+  generated as Markdown and converted to `.docx` via `pandoc` for a clean
+  Google Drive import.
+
+### Fixed
+- `app/core/chunking.py` — root-caused the two "open items" from the
+  previous eval pass with real investigation rather than retuning a
+  threshold on a hunch: query 1's target PR chunk never even reached the
+  fused candidate pool, because a PR/issue's identifying number was
+  never embedded in its chunk's searchable text — only carried in
+  `chunk_id`/`source_number` metadata, invisible to both BM25 and dense
+  retrieval regardless of threshold. Query 5's target chunk *did*
+  retrieve and rank #1, but the cross-encoder still under-scored it
+  (0.042) because the passage never self-identifies as belonging to a
+  PR. Directly verified threshold retuning could not have fixed either
+  case (the real refusal-test query's score sat *between* the two
+  problem queries' scores — no cutoff separates all three). Fixed by
+  prepending a `"PR #1234: title"` header to every chunk, not just the
+  lead-in segment (an earlier, incomplete version of this fix only
+  touched the first segment). Re-ran the full 10-query comparison after
+  the fix: vector answered 6/10 (up from 3/10), faithfulness held
+  steady, and refusal-test accuracy stayed perfect.
+- `docs/EVAL_RESULTS.md` — full rewrite reflecting the fix above: final
+  per-query table, corrected findings (the "vector threshold needs
+  retuning" diagnosis was itself imprecise — see the finding write-up
+  for the more specific root cause), and a settled "bottom line."
+
+### Added
 - `docs/DEMO_SCRIPT.md` — a ~4-5 minute demo walkthrough; each query is
   picked to demonstrate one specific finding from `docs/EVAL_RESULTS.md`
   (vector win, graph win, the entity-matcher limitation found by this

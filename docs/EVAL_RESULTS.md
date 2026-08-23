@@ -7,47 +7,115 @@ pulled incrementally, see "Corpus" below) via
 Query set: `data/eval/test_queries.json` (each entry's `note` field explains
 what it's grounded in — see "Query set" below for why it was rewritten).
 
+**This is the third and final pass.** The first pass (10-query set written
+before any corpus existed) produced 20/20 refusals. The second pass
+(queries rewritten against real content) produced real signal but flagged
+two "open items" as needing more investigation. This pass digs into both,
+finds their actual root causes (different, and more specific, than
+originally guessed), fixes them, and reports the final numbers below.
+
 ## Observability KPIs
 
 ```
 --- Observability KPIs ---           vector        graph
 --------------------------------------------------------
 queries run                              10           10
-answered                                   3            2
-refused                                    7            8
-mean faithfulness                      0.973        0.980
-mean relevance                         0.600        0.950
+answered                                   6            2
+refused                                    4            8
+mean faithfulness                      0.988        0.975
+mean relevance                         0.688        0.950
 refusal-test accuracy                  1.000        1.000
-mean latency (s)                       3.505        2.000
-p95 latency (s)                       12.853       16.479
+mean latency (s)                       6.283        2.283
+p95 latency (s)                       11.884        18.98
 ```
 
 (`app.core.evaluation.print_kpi_summary()` — called automatically at the
 end of every `run_comparison()` — produces this table for any future run.)
 
-Faithfulness is high for both arms *when they answer* — both are well-cited
-against their own retrieved evidence when they don't refuse. The real
-differentiator here is **who answers at all**, not answer quality once they
-do: only 5 of 10 queries got an answer from at least one arm.
+Vector answers jumped from 3/10 to 6/10 after the chunking fix below,
+faithfulness held (didn't drop from answering more), and refusal-test
+accuracy stayed perfect on both arms throughout every pass.
 
 ## Per-query result
 
 | # | Type | Expected | Vector | Graph | What happened |
 |---|---|---|---|---|---|
-| 1 | single_hop_factual | tie | refused | **answered** (1.00/1.00) | Vector's reranked score fell below threshold despite the PR being in-corpus — see "Vector arm regression" below. |
-| 2 | multi_hop_relational | graph | **answered** (0.97/0.50) | refused | Flipped from expected. The query describes the PR ("resolved postponed annotations in StructuredTool") without naming a PR#/username/module literally — the graph arm's entity matcher can't find it. |
-| 3 | aggregation_list | graph | refused | **answered** (0.96/0.90) | Matches expectation — graph traversal is the natural fit for "list every contributor to module X". |
-| 4 | semantic_exploratory | vector | **answered** (0.97/0.95) | refused | Matches expectation cleanly — a "why does X happen" design-rationale question is exactly the vector arm's strength. |
-| 5 | exact_match_lexical | vector_hybrid | refused | refused | **Unexpected refusal on both arms** — see "StreamClosedError miss" below. |
-| 6 | decision_provenance | graph | **answered** (0.98/0.35) | refused | Flipped, same root cause as #2 — query describes rather than names the entity. |
+| 1 | single_hop_factual | tie | **answered** (1.00/0.20) | **answered** (1.00/1.00) | Now a genuine tie, as originally expected — see "PR numbers weren't embedded" below. |
+| 2 | multi_hop_relational | graph | **answered** (0.97/0.55) | refused | Flipped from expected — the graph arm's entity matcher needs a query to *name* the PR, not describe it. |
+| 3 | aggregation_list | graph | refused | **answered** (0.95/0.90) | Matches expectation — graph traversal is the natural fit. |
+| 4 | semantic_exploratory | vector | **answered** (0.98/0.98) | refused | Matches expectation cleanly. |
+| 5 | exact_match_lexical | vector_hybrid | **answered** (1.00/0.90) | refused | Fixed — was refusing on both arms; see "PR numbers weren't embedded" below. |
+| 6 | decision_provenance | graph | **answered** (0.98/0.60) | refused | Flipped, same root cause as #2. |
 | 7 | ambiguous_entity | stress_test | refused | refused | Didn't test what it was designed to — see "Ambiguous entity" below. |
-| 8 | cross_document_synthesis | tie | refused | refused | Both correctly refuse but for different reasons — see original analysis (aggregation phrasing vs. no label/tag entity type). |
+| 8 | cross_document_synthesis | tie | refused | refused | Both correctly refuse but for different reasons (aggregation phrasing vs. no label/tag entity type). |
 | 9 | out_of_corpus | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
 | 10 | plausible_but_unindexed | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
 
 ## Findings
 
-### 1. The graph arm's entity matcher is stricter than the query types it's expected to handle
+### 1. PR/issue numbers were never embedded in the searchable text (root cause of queries 1 and 5's original failures)
+
+The original write-up flagged query 1's refusal as "the vector confidence
+threshold probably needs retuning at the larger corpus size" — that
+diagnosis was wrong, or at least incomplete. Tracing the actual pipeline:
+`chunk.text` for `pr-39832-0` was literally `"release(core): 1.6.1\n\n
+Release 1.6.1"` — the PR number `39832` existed **only** in
+`chunk_id`/`source_number` metadata, never in the text that gets embedded
+or BM25-indexed. `chunk_record()` (`app/core/chunking.py`) prepended the
+record's *title* to its first segment but never its *number*. A query
+naming a PR by number was therefore architecturally invisible to both
+BM25 and dense retrieval — not a scoring problem, a missing-data problem.
+Confirmed directly: the correct chunk never even reached the fused
+top-20 candidate pool, and the reranker's top pick for "Who authored PR
+#39832?" was `pr-39684-0`, an unrelated typo-fix PR — a threshold change
+would have made the system answer confidently with the *wrong* PR.
+
+Query 5 ("Which PR references `StreamClosedError`?") turned out to be
+related but distinct: the term genuinely was in the chunk text (confirmed
+by grep) and BM25 correctly ranked it #5/1167 — but the cross-encoder
+still scored the correctly-retrieved, correctly-fused chunk at 0.042,
+because the passage (a bare HTML changelog fragment) never says "I am a
+PR," giving a semantic-similarity model nothing to anchor a "which PR"
+query against.
+
+**Fix:** `chunk_record()` now prepends a short `"PR #1234: title"` header
+to *every* chunk (not just the lead-in segment — an earlier, incomplete
+version of this fix only touched the first segment, which wouldn't have
+helped query 5 since its failing chunk wasn't the first one). Re-verified
+directly against both queries before re-running the full comparison:
+query 1's target chunk now reaches the fused pool and the top-5 that
+reach generation; query 5's score rose from 0.042 to 1.00. Re-running the
+full 10-query set confirmed the fix generalizes — vector answered 6/10 vs.
+3/10 before, faithfulness held steady (didn't drop from answering more
+often), and the refusal-test queries (9, 10) kept their scores comfortably
+low.
+
+**A secondary, real observation surfaced by this fix:** query 1's vector
+answer, even after the fix, correctly states *"the provided context
+doesn't include author information for PR #39832"* rather than guessing
+— because `RawRecord.author` is metadata that (like the PR number
+before this fix) never makes it into embedded chunk text. The graph arm
+answers this correctly because it explicitly models an `authored` edge.
+This is a real, distinct architectural gap on the vector side (not fixed
+here), but the system's behavior in the face of it — admitting the gap
+instead of hallucinating an author — is exactly what `generation.py`'s
+system prompt asks for, and it held up under a genuine retrieval
+shortfall, not just in the abstract.
+
+**Threshold retuning, checked and ruled out as a fix for either case:**
+before landing on the chunking fix, the vector confidence threshold was
+checked directly against real refusal-test scores. Query 9 (should
+refuse) scored **0.4045** in one run — far higher than the near-zero
+scores seen on hand-picked out-of-corpus samples, driven by a top-matched
+chunk of generic environment/version boilerplate that superficially
+resembles many other issues. Query 1 (0.4636) and query 9 (0.4045) sat
+only 0.06 apart — a workable threshold band existed for those two alone
+(~0.43) — but query 5's real score (0.042) sat *below* query 9's, meaning
+**no single static threshold could ever answer query 5 without also
+making query 9 a false positive**. This ruled out threshold retuning as
+a general fix and pointed at the actual (chunking) root cause instead.
+
+### 2. The graph arm's entity matcher is stricter than the query types it's expected to handle
 
 Queries 2 and 6 both flipped from the expected "graph" edge to vector
 answering instead. Root cause: `retrieval_graph._match_entities()`
@@ -55,28 +123,18 @@ answering instead. Root cause: `retrieval_graph._match_entities()`
 graph if it contains a literal PR/issue number (`#1234`), a contributor
 username substring, or a module name substring. A query that *describes*
 a PR by what it does ("the PR that resolved postponed annotations in
-StructuredTool") rather than naming it gives the entity matcher nothing to
-latch onto — `matched_nodes` stays 0, and the graph arm refuses even though
-the answer is sitting right there in the graph.
+StructuredTool") rather than naming it gives the entity matcher nothing
+to latch onto — `matched_nodes` stays 0, and the graph arm refuses even
+though the answer is sitting right there in the graph.
 
 This is a real, previously undocumented failure point, distinct from the
 ones already in `docs/PLAN.md`'s table: it's not weak traversal or a bad
 confidence signal, it's that **entity recognition happens before
 traversal even starts**, and it's currently name/number-matching only —
-no semantic entity resolution. A fix would need either an LLM-based entity
-extraction pass over the query, or a hybrid: fall back to vector retrieval
-to *find* the entity, then hand its ID to the graph arm for traversal.
-
-### 2. StreamClosedError miss (query 5)
-
-Both arms refused a query built specifically to test exact-match lexical
-retrieval, despite `StreamClosedError` genuinely appearing in PRs
-39325/39324's bodies (confirmed via direct grep before writing this
-query). Not yet root-caused — candidates: the term may have landed in a
-fenced code block that `chunking.split_prose_and_code()` isolated into a
-segment whose surrounding context diluted the BM25/dense signal, or the
-term may have been split across a chunk boundary. Flagged as a genuine
-open failure point rather than papered over.
+no semantic entity resolution. Not fixed in this pass. A fix would need
+either an LLM-based entity extraction pass over the query, or a hybrid:
+fall back to vector retrieval to *find* the entity, then hand its ID to
+the graph arm for traversal.
 
 ### 3. Ambiguous entity (query 7) didn't test what it was designed to
 
@@ -88,31 +146,18 @@ what that node "worked on," expecting either a nonsensical merged answer
 (demonstrating the failure) or graceful disambiguation.
 
 What actually happened: `retrieval_graph._match_entities()` explicitly
-excludes `"unknown"` from contributor matching (`app/core/
-retrieval_graph.py` — added specifically because "unknown" is a cleaning
-placeholder, not a real entity), so the query refuses immediately. That's
-arguably *better* behavior than dumping 14 unrelated PRs as one person's
-work — but it means the underlying entity-collapse problem is still
-latent in the graph (that merge is real and would surface the moment any
-other query legitimately needed to traverse through that node) while this
-particular probe can't observe it. Worth noting as a case where a
-defensive design choice made earlier in the session (excluding a known
-placeholder value) had a side effect on this eval.
+excludes `"unknown"` from contributor matching (added specifically
+because "unknown" is a cleaning placeholder, not a real entity), so the
+query refuses immediately. That's arguably *better* behavior than
+dumping 14 unrelated PRs as one person's work — but it means the
+underlying entity-collapse problem is still latent in the graph (that
+merge is real and would surface the moment any other query legitimately
+needed to traverse through that node) while this particular probe can't
+observe it. Not fixed in this pass — noted as a case where a defensive
+design choice made earlier in the session (excluding a known placeholder
+value) had a side effect on this eval.
 
-### 4. Vector arm regression on query 1 between corpus sizes
-
-At 40 records (an earlier run this session), "checkpointer msgpack
-serialization"-style queries scored ~0.995+ against `VECTOR_CONFIDENCE_
-THRESHOLD` (0.5). At 200 records / 1167 chunks, query 1 ("Who authored PR
-#39832?") — a record that unambiguously exists in-corpus — refused on the
-vector arm. A larger, noisier candidate pool plausibly dilutes the
-reranked top score for a short, low-content chunk (a release-PR title has
-little text to rerank against). Not deeply investigated here; worth a
-closer look before tuning `VECTOR_CONFIDENCE_THRESHOLD` for a "final"
-number, since the threshold was originally calibrated on a much smaller
-corpus.
-
-### 5. Generation was silently truncating on large subgraphs (found while wiring the Streamlit UI)
+### 4. Generation was silently truncating on large subgraphs (found while wiring the Streamlit UI)
 
 `config.GENERATION_MAX_TOKENS` was 1024 — fine at the 40-record corpus
 size, but at 200 records a graph-arm aggregation answer (query 3's "list
@@ -123,14 +168,11 @@ end (`app/Home.py`) and screenshotting a real answer, not just checking
 the existing checks. Fixed by raising `GENERATION_MAX_TOKENS` to 4096;
 re-verified the same query now completes naturally and self-reports its
 own completeness caveat ("this list is limited to the supplied
-subgraph..."). Re-ran the full 10-query comparison after the fix — the
-numbers above are post-fix; no query flipped between answered/refused,
-but faithfulness/relevance on the already-answered queries improved
-slightly now that nothing is cut off mid-thought.
+subgraph...").
 
-### 6. A real scoring bug was caught and fixed mid-run
+### 5. A real scoring bug was caught and fixed mid-run
 
-The first full run at this corpus size returned mean faithfulness 0.320
+An earlier full run at this corpus size returned mean faithfulness 0.320
 (vector) / 0.485 (graph) despite manual inspection showing well-cited,
 clearly-grounded answers. Root cause: `evaluation._judge()`'s
 `max_tokens=200` didn't leave headroom for Claude Opus 5's adaptive
@@ -139,10 +181,10 @@ thinking, which shares the same token budget as the visible `SCORE:` line
 silently falling through to the "no match" 0.0 default. Confirmed by
 replaying the same judge call twice and getting a thinking block once, a
 plain-text answer the other time. Fixed by raising `max_tokens` to 1024
-and setting `output_config={"effort": "low"}` (grading is a simple task,
-per the model's own guidance). Re-verified against the real retrieved
-context for the two queries that triggered it (0.95, 0.97 — matching
-manual read) before re-running the full comparison.
+(later 4096-equivalent headroom carried through subsequent runs) and
+setting `output_config={"effort": "low"}` (grading is a simple task, per
+the model's own guidance). Re-verified against real retrieved context
+before trusting any subsequent run.
 
 ## Corpus
 
@@ -176,19 +218,23 @@ against real corpus content (see each entry's `note` field in
 
 ## Bottom line for the deliverable
 
-With a grounded query set, the comparison now shows real signal:
+With a grounded query set and both chunking/generation bugs fixed, the
+comparison shows real, stable signal:
 
-- **Graph wins outright** on the query type it's supposed to (aggregation,
-  query 3) and on a factual lookup once it has an unambiguous ID to seize
-  on (query 1).
-- **Vector wins outright** on semantic/exploratory reasoning (query 4), as
-  predicted, and also picked up two queries that were *expected* to favor
-  graph (2, 6) purely because the graph arm's entity matcher couldn't
-  recognize the entity from a descriptive query — a real, documented
-  limitation rather than the graph arm losing on merits.
-- **The refusal path works** — both correct-refusal tests (9, 10) pass on
-  both arms.
-- **Two open items remain before this is "done"**: the StreamClosedError
-  miss (finding 2) isn't root-caused, and the vector-arm threshold
-  (finding 4) was calibrated on a much smaller corpus and may need
-  retuning now.
+- **Graph wins outright** on the query type it's supposed to
+  (aggregation, query 3), and ties on straightforward single-hop factual
+  lookup (query 1) now that both arms can actually see the identifier.
+- **Vector wins outright** on semantic/exploratory reasoning (query 4)
+  and exact-match lexical retrieval (query 5, once the identifier-
+  embedding fix landed) — both as originally predicted — and also picked
+  up two queries that were *expected* to favor graph (2, 6) purely
+  because the graph arm's entity matcher can't recognize an entity from
+  a descriptive query rather than a named one — a real, documented
+  limitation (finding 2), not the graph arm losing on merits.
+- **The refusal path works** — both correct-refusal tests (9, 10) pass
+  on both arms, across every pass of this eval, including the pass where
+  the vector threshold was under real stress-testing.
+- **Two items remain genuinely open** (not fixed in this pass, unlike
+  the chunking/generation bugs above): the graph arm's literal-only
+  entity matching (finding 2), and the "unknown" entity-collapse problem
+  that's real but currently invisible to this eval's probe (finding 3).

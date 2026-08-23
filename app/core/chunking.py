@@ -74,26 +74,36 @@ def chunk_record(
 ) -> list[Chunk]:
     """Chunk one cleaned RawRecord (see ingestion.py) into Chunk objects.
 
-    Title is prepended to the record's first prose segment so every chunk
-    of a PR/issue still carries its title for context, even split ones.
+    A short "PR #1234: title" header is prepended to every chunk's text
+    (not just the first one) — a record's identifying number was
+    previously carried only in Chunk metadata (chunk_id/source_number),
+    never in the embedded/BM25-indexed text itself, so a query naming a
+    PR/issue by number was architecturally unable to match any chunk
+    no matter how the retrieval or confidence threshold was tuned (see
+    docs/EVAL_RESULTS.md's "PR/issue numbers are never embedded in the
+    searchable text" finding). The header also gives every chunk — not
+    just the lead-in — something to self-identify against, which helps
+    the cross-encoder recognize a passage as belonging to a PR/issue
+    even when the passage text itself never says so (the "StreamClosedError"
+    reranker-underscoring finding in the same doc).
     """
     kind = source_kind or record.kind
     splitter = _splitter(chunk_tokens)
+    header = f"{kind.upper()} #{record.number}: {record.title}"
 
     segments = split_prose_and_code(record.body)
-    if not segments or segments[0][1]:  # no prose lead-in, or starts with code
-        segments = [(record.title, False)] + segments
-    else:
-        segments[0] = (f"{record.title}\n\n{segments[0][0]}", False)
+    if not segments:
+        segments = [(record.title, False)]
 
     chunks: list[Chunk] = []
     for text, is_code in segments:
         pieces = splitter.split_text(text)
         for piece in pieces:
+            piece_text = piece if piece.startswith(header) else f"{header}\n\n{piece}"
             chunks.append(
                 Chunk(
                     chunk_id=f"{kind}-{record.number}-{len(chunks)}",
-                    text=piece,
+                    text=piece_text,
                     is_code=is_code,
                     source_kind=kind,
                     source_number=record.number,

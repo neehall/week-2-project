@@ -7,6 +7,27 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/graph_flow.py` — implemented: wires `parse_query -> {retrieve_vector,
+  retrieve_graph} -> confidence_gate -> generate_or_refuse` as a compiled
+  LangGraph `StateGraph`. `build_graph(vector_store, graph_store)` binds
+  the stores into their retrieval nodes via `functools.partial` (node
+  functions only receive `(state, [config])` at invoke time). Two
+  LangGraph gotchas hit and fixed: a node parameter literally named
+  `store` collides with LangGraph's own `BaseStore` dependency injection
+  and gets silently overwritten with `None` — renamed to
+  `vector_store`/`graph_store`; and nodes must return only the state keys
+  they update (not the whole state dict), since two parallel branches
+  each "writing" an unrelated key they didn't change looks like a
+  conflicting concurrent update to LangGraph's channel model.
+  `generate_or_refuse` prefers the vector arm when it clears its own
+  threshold (a graded score) and falls back to the graph arm otherwise
+  (`matched_nodes` is a coarser binary signal). Verified end-to-end: a
+  factual query answers correctly off the vector arm, an out-of-corpus
+  query refuses, and a relational "what did X work on" query — where the
+  vector arm's score collapses to ~0 but the graph arm still has a
+  matched entity — correctly falls back to the graph arm, a concrete
+  instance of the graph-wins pattern docs/PLAN.md's query-type table
+  predicts.
 - `app/core/generation.py` — implemented: calls Claude via the official
   `anthropic` SDK (`config.GENERATION_MODEL`, default `claude-opus-5`),
   swapped in for the originally-scoped Nebius-hosted model since

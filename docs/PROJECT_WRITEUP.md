@@ -72,8 +72,9 @@ aren't mangled.
 
 At 200 records, chunking (~250-token chunks, sized for the 384-dim local
 embedding model) produced ~1150-1170 chunks, and graph construction
-produced 300+ nodes (well past the 20-node minimum) across contributor,
-PR, issue, and module node types.
+produced 324 nodes (well past the 20-node minimum) across five node
+types: contributor, PR, issue, module, and **skill** (tools/technologies
+— see the graph schema note below).
 
 **Known limitation, stated explicitly rather than glossed over:** this is
 a one-time snapshot of the most-recently-updated slice of a large,
@@ -217,8 +218,27 @@ The notable iterations:
    *every* chunk (not just the lead-in segment, which was the original,
    incomplete version of this fix) — re-verified against the exact
    failing queries and re-ran the full 10-query comparison, confirming
-   the fix (vector arm went from 3/10 to 5/10 queries answered, with
+   the fix (vector arm went from 3/10 to 6/10 queries answered, with
    faithfulness holding steady, not dropping).
+
+8. **A gap against the original project brief, found by re-reading the
+   brief against the actual code rather than from memory.** The brief
+   models org knowledge as people/projects/**skills**/documents/
+   decisions. The graph schema covered four of the five — no "skill"
+   node type existed. Rather than invent an arbitrary keyword scan,
+   looked for a convention this specific corpus already uses reliably:
+   conventional-commit title scopes (`fix(anthropic): ...`) and
+   Dependabot-style "bump X from A to B" titles both name real
+   tools/technologies. Added a `skill` node type and a `uses` edge
+   sourced from those two patterns (the commit-scope source is
+   intersected with a curated allowlist so internal module scopes like
+   "core" or "infra" aren't misclassified as external tools). No new
+   edge type was needed to answer "what tools did a contributor use" —
+   that's the same 2-hop traversal pattern already used for
+   contributor→module. Verified end-to-end against the brief's own
+   example query shape ("what did X work on and what tools did they
+   use") — it now answers with a dedicated, fully-cited "Tools / skills
+   used" section.
 
 ## 5. Learnings / Observations
 
@@ -275,3 +295,13 @@ The notable iterations:
   query set written before any corpus existed), and only then decide
   how to fix it — rather than quietly rewriting the queries first and
   presenting a "clean" result as if that had always been the plan.
+
+- **Re-checking the original brief against the actual code — not
+  against memory of what was planned — found a real gap.** The graph
+  schema had quietly drifted to four node types instead of the brief's
+  five somewhere between `docs/SCOPE.md`'s early scoping (a reasonable
+  domain adaptation) and the final implementation, and it went
+  unnoticed through several rounds of testing because every eval query
+  happened to route through the four types that existed. A deliberate
+  line-by-line check against the brief's literal text — not just "does
+  the demo work" — is what surfaced it.

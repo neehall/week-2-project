@@ -25,5 +25,16 @@
 
 ## Graph schema (20+ nodes required)
 
-- Node types: contributors, PRs, issues/RFCs, modules/packages
-- Edge types: authored, reviewed, merged, discusses, depends-on, decided-in
+- Node types: contributors, PRs, issues/RFCs, modules/packages, **skills**
+  (tools/technologies — provider integrations recovered from
+  conventional-commit title scopes, e.g. `fix(anthropic): ...`, plus
+  libraries recovered from Dependabot-style "bump X from A to B" titles;
+  see `app/core/graph_build.py`'s `_extract_skills()`). Maps the original
+  brief's people/projects/skills/documents/decisions framing onto this
+  GitHub-repo domain — "skills" here means tools a PR/contributor touched,
+  not a human skill inventory, since a code repo has no such thing
+  natively.
+- Edge types: authored, reviewed, merged, discusses, decided-in, **uses**
+  (record → skill). A contributor's tools are a 2-hop traversal away
+  (contributor -authored-> pr -uses-> skill) — no direct contributor-skill
+  edge needed, same pattern as contributor-module.

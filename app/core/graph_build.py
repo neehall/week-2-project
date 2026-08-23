@@ -1,8 +1,17 @@
 """Extract entities/relationships from the cleaned corpus and build the graph.
 
 See docs/SCOPE.md, "Graph schema (20+ nodes required)":
-- Node types: contributors, PRs, issues/RFCs, modules/packages
-- Edge types: authored, reviewed, merged, discusses, depends-on, decided-in
+- Node types: contributors, PRs, issues/RFCs, modules/packages, skills
+- Edge types: authored, reviewed, merged, discusses, decided-in, uses
+
+"Skills" (people/projects/skills/documents/decisions, per the original
+project brief) map onto this GitHub-repo domain as the tools/technologies
+a PR touches — provider integrations (openai, anthropic, deepseek, ...)
+recovered from conventional-commit title scopes, and libraries recovered
+from Dependabot-style "bump X from A to B" titles. See
+_extract_skills() below. A contributor's tools are then a 2-hop graph
+traversal away (contributor -authored-> pr -uses-> skill), same as any
+other multi-hop query — no direct contributor-skill edge is needed.
 
 Uses the same cleaned records as the vector arm (see ingestion.py) but
 builds a separate index — the two arms don't share state at query time, so
@@ -16,14 +25,29 @@ isn't implemented yet (see GraphStore).
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from dataclasses import dataclass, field
+
+# Known tools/technologies worth surfacing as "skill" nodes — provider
+# integrations this repo's PRs actually touch (seen as conventional-commit
+# title scopes, e.g. "fix(anthropic): ...") plus a few common libraries/
+# infra terms that show up in dependency-bump titles or body text.
+KNOWN_SKILLS = {
+    "openai", "anthropic", "deepseek", "fireworks", "mistralai", "openrouter",
+    "xai", "perplexity", "huggingface", "exa", "nomic", "langgraph",
+    "langchain", "pydantic", "fastapi", "docker", "redis", "postgres",
+    "pytest", "asyncio", "graphql", "grpc", "websocket", "typescript", "rust",
+}
+
+_SCOPE_RE = re.compile(r"^\w+\(([^)]+)\):")
+_BUMP_RE = re.compile(r"\bbump\s+([a-zA-Z][\w.-]*)\s+from\b", re.IGNORECASE)
 
 
 @dataclass
 class Node:
     id: str
-    type: str  # "contributor" | "pr" | "issue" | "rfc" | "module"
+    type: str  # "contributor" | "pr" | "issue" | "rfc" | "module" | "skill"
     properties: dict = field(default_factory=dict)
 
 
@@ -31,7 +55,7 @@ class Node:
 class Edge:
     source_id: str
     target_id: str
-    type: str  # "authored" | "reviewed" | "merged" | "discusses" | "depends_on" | "decided_in"
+    type: str  # "authored" | "reviewed" | "merged" | "discusses" | "decided_in" | "uses"
     properties: dict = field(default_factory=dict)
 
 
@@ -112,16 +136,47 @@ def _infer_module_path(record, known_modules: list[str]) -> str | None:
     return counts.most_common(1)[0][0]
 
 
+def _extract_skills(record) -> set[str]:
+    """Recover the tools/technologies a record touches.
+
+    Two sources, both grounded in real conventions this corpus actually
+    uses (not a free-text keyword scan of arbitrary prose):
+      - Conventional-commit title scopes, e.g. "fix(anthropic): ..." or
+        "chore(mistralai,exa,nomic): ..." — intersected with KNOWN_SKILLS
+        so internal-only scopes (module names like "core", "infra") don't
+        get promoted to "skill" nodes.
+      - Dependabot-style "Bumps X from A to B" / "bump X from A to B"
+        titles — the bumped dependency name is a tool by definition, kept
+        regardless of KNOWN_SKILLS membership.
+    """
+    skills: set[str] = set()
+
+    scope_match = _SCOPE_RE.match(record.title)
+    if scope_match:
+        for scope in scope_match.group(1).split(","):
+            scope = scope.strip().lower()
+            if scope in KNOWN_SKILLS:
+                skills.add(scope)
+
+    bump_match = _BUMP_RE.search(record.title)
+    if bump_match:
+        skills.add(bump_match.group(1).lower())
+
+    return skills
+
+
 def extract_entities_and_relations(records: list) -> tuple[list[Node], list[Edge]]:
     """Turn cleaned records (ingestion.py) into nodes and edges.
 
     - one Node per unique contributor (author + every reviewer)
     - one Node per PR/issue/RFC, one Node per module touched
+    - one Node per tool/technology touched (see _extract_skills())
     - Edge(contributor -authored-> pr/issue/rfc)
     - Edge(contributor -reviewed-> pr/issue/rfc)
     - Edge(pr -merged-> module)
     - Edge(rfc -decided_in-> module)
     - Edge(issue -discusses-> module)   (issues don't "merge" or "decide")
+    - Edge(record -uses-> skill)
     - Edge(record -discusses-> record)  for linked_issues that resolve to
       another record actually present in this corpus (a linked issue
       outside the pulled set has nothing to point at)
@@ -155,6 +210,11 @@ def extract_entities_and_relations(records: list) -> tuple[list[Node], list[Edge
             add_node(module_id, "module", {})
             edge_type = {"pr": "merged", "rfc": "decided_in", "issue": "discusses"}[r.kind]
             edges.append(Edge(record_id, module_id, edge_type))
+
+        for skill in _extract_skills(r):
+            skill_id = f"skill:{skill}"
+            add_node(skill_id, "skill", {})
+            edges.append(Edge(record_id, skill_id, "uses"))
 
         for linked_number in r.linked_issues:
             target_id = record_node_id.get(linked_number)

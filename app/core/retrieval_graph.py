@@ -49,6 +49,12 @@ def _match_entities(query: str, store) -> set[str]:
         if module_name.lower() in query_lower:
             matched.add(node_id)
 
+    # Skill/technology names, e.g. "what did X work on with anthropic"
+    for node_id in store.node_ids_by_type("skill"):
+        skill_name = node_id.split(":", 1)[1]
+        if skill_name.lower() in query_lower:
+            matched.add(node_id)
+
     return matched
 
 

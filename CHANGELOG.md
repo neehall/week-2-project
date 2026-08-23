@@ -7,6 +7,25 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/core/graph_build.py` — added a `skill` node type, closing a gap
+  against the original project brief's people/projects/**skills**/
+  documents/decisions framing (previously modeled as contributor/pr-
+  issue-rfc/module only). `_extract_skills()` recovers real
+  tools/technologies from two conventions this corpus actually uses:
+  conventional-commit title scopes (e.g. `fix(anthropic): ...`)
+  intersected with a curated `KNOWN_SKILLS` set so internal module
+  scopes aren't misclassified as tools, and Dependabot-style "bump X
+  from A to B" titles (the bumped dependency is a tool by definition).
+  New `uses` edge type (record -> skill); a contributor's tools are a
+  2-hop traversal away (contributor -authored-> pr -uses-> skill), same
+  pattern as contributor-module, no new edge type needed for that.
+  `retrieval_graph._match_entities()` now also recognizes skill names in
+  the query text. Verified against the real corpus: 12 skill nodes
+  recovered (openai, anthropic, deepseek, fireworks, mistralai,
+  openrouter, xai, perplexity, huggingface, exa, nomic, h2), and a
+  literal instance of the brief's own example query — "what did X work
+  on and what tools did they use" — answered correctly end-to-end with
+  a dedicated "Tools / skills used" section, fully cited.
 - `docs/PROJECT_WRITEUP.md` / `docs/PROJECT_WRITEUP.docx` — full project
   write-up (overview, architecture, dataset, prompts used, every
   iteration this session went through, and learnings/observations),

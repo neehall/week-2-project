@@ -8,11 +8,36 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Load .env into the process environment on first import of this module, so
+# every other module can just read os.environ (via github_token() etc.)
+# without each having to remember to call load_dotenv() itself. No-ops
+# quietly if .env doesn't exist yet.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
 # --- Corpus -----------------------------------------------------------------
 
 GITHUB_REPO = "langchain-ai/langchain"
-PR_LIMIT = 100
-ISSUE_LIMIT = 100
+# Small by default so iterating on chunking/graph_build/retrieval doesn't
+# require a full multi-hundred-request ingestion run each time. Override via
+# env for the final full pull (see run.sh / .env.example).
+PR_LIMIT = int(os.environ.get("PR_LIMIT", "20"))
+ISSUE_LIMIT = int(os.environ.get("ISSUE_LIMIT", "20"))
+
+# Wall-clock ceiling for one ingestion pull (pull_pull_requests or
+# pull_issues_and_rfcs), independent of PR_LIMIT/ISSUE_LIMIT — protects
+# against `get_pulls()`/`get_issues()` paging through a huge closed/updated
+# history without ever finding `limit` matching records (e.g. filters
+# rarely matching). Returns whatever was collected so far rather than
+# hanging indefinitely.
+INGESTION_TIME_BUDGET_SECONDS = int(os.environ.get("INGESTION_TIME_BUDGET_SECONDS", "120"))
+
+# Per-request timeout and retry for the GitHub client — PyGithub's default
+# client has no timeout, so a stalled connection hangs rather than failing
+# fast. See _client() in ingestion.py.
+GITHUB_REQUEST_TIMEOUT_SECONDS = 15
+GITHUB_REQUEST_RETRIES = 3
 
 # --- Paths --------------------------------------------------------------
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 
@@ -50,9 +51,13 @@ class RawRecord:
 
 def _client() -> Github:
     token = config.github_token()
+    kwargs = dict(
+        timeout=config.GITHUB_REQUEST_TIMEOUT_SECONDS,
+        retry=config.GITHUB_REQUEST_RETRIES,
+    )
     if token:
-        return Github(auth=Auth.Token(token))
-    return Github()  # unauthenticated: 60 req/hr, smoke-testing only
+        return Github(auth=Auth.Token(token), **kwargs)
+    return Github(**kwargs)  # unauthenticated: 60 req/hr, smoke-testing only
 
 
 def _linked_issue_numbers(body: str) -> list[int]:
@@ -91,8 +96,17 @@ def pull_pull_requests(limit: int = config.PR_LIMIT) -> list[RawRecord]:
     pulls = repo.get_pulls(state="closed", sort="updated", direction="desc")
 
     records: list[RawRecord] = []
+    started = time.monotonic()
     for pr in pulls:
         if len(records) >= limit:
+            break
+        elapsed = time.monotonic() - started
+        if elapsed > config.INGESTION_TIME_BUDGET_SECONDS:
+            print(
+                f"pull_pull_requests: time budget "
+                f"({config.INGESTION_TIME_BUDGET_SECONDS}s) hit with "
+                f"{len(records)}/{limit} PRs collected — stopping early."
+            )
             break
         if pr.merged_at is None:
             continue  # closed-without-merge: no decision was actually made
@@ -124,6 +138,9 @@ def pull_pull_requests(limit: int = config.PR_LIMIT) -> list[RawRecord]:
                 module_path=module_path,
             )
         )
+        if len(records) % 10 == 0:
+            print(f"pull_pull_requests: {len(records)}/{limit} collected "
+                  f"({elapsed:.0f}s elapsed)")
     return records
 
 
@@ -139,8 +156,17 @@ def pull_issues_and_rfcs(limit: int = config.ISSUE_LIMIT) -> list[RawRecord]:
     issues = repo.get_issues(state="all", sort="updated", direction="desc")
 
     records: list[RawRecord] = []
+    started = time.monotonic()
     for issue in issues:
         if len(records) >= limit:
+            break
+        elapsed = time.monotonic() - started
+        if elapsed > config.INGESTION_TIME_BUDGET_SECONDS:
+            print(
+                f"pull_issues_and_rfcs: time budget "
+                f"({config.INGESTION_TIME_BUDGET_SECONDS}s) hit with "
+                f"{len(records)}/{limit} issues collected — stopping early."
+            )
             break
         if issue.pull_request is not None:
             continue  # the issues endpoint also returns PRs; skip those
@@ -165,6 +191,9 @@ def pull_issues_and_rfcs(limit: int = config.ISSUE_LIMIT) -> list[RawRecord]:
                 module_path=None,  # inferred at graph-build time from labels/body
             )
         )
+        if len(records) % 10 == 0:
+            print(f"pull_issues_and_rfcs: {len(records)}/{limit} collected "
+                  f"({elapsed:.0f}s elapsed)")
     return records
 
 

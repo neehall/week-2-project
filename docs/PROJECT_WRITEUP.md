@@ -18,15 +18,7 @@ RFCs, in a simple chat interface, with grounded, cited answers.*
 
 ### Architecture
 
-```
-parse_query
-    ├── retrieve_vector   (hybrid: dense + BM25 → reciprocal-rank fusion → cross-encoder rerank → top-5 chunks)
-    └── retrieve_graph    (entity match → 1-2 hop graph traversal → serialized subgraph)
-            │
-      confidence_gate
-       ├── below threshold (both arms)  → refuse
-       └── sufficient evidence (either arm) → generate cited answer
-```
+![Architecture diagram](assets/architecture.png)
 
 Both arms run in parallel on every query, wired through a LangGraph state
 machine (`app/graph_flow.py`). A shared confidence gate — not the LLM —

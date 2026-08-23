@@ -7,6 +7,20 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- Architecture diagram added across all documentation. `README.md`,
+  `docs/PLAN.md` (replacing its plain-text ASCII version),
+  `docs/SCOPE.md`, `docs/EVAL_RESULTS.md`, and `docs/DEMO_SCRIPT.md` use
+  a Mermaid `flowchart` fence (renders natively on GitHub, no separate
+  asset to keep in sync). `docs/PROJECT_WRITEUP.md` — which becomes
+  `.docx` via pandoc, and Word/Google Docs can't render Mermaid fences —
+  embeds a rendered PNG instead (`docs/assets/architecture.png`,
+  generated once via a local Playwright/headless-Chromium render of the
+  same Mermaid source, so both versions stay visually identical).
+  Regenerated `PROJECT_WRITEUP.docx`; confirmed the image round-trips
+  correctly (extracted the embedded media from the docx and diffed its
+  byte size against the source PNG).
+
+### Added
 - `app/core/graph_build.py` — added a `skill` node type, closing a gap
   against the original project brief's people/projects/**skills**/
   documents/decisions framing (previously modeled as contributor/pr-

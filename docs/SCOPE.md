@@ -5,6 +5,29 @@
 - Corpus: `langchain-ai/langchain` GitHub repo — contributors, PRs,
   issues/RFCs, and modules, pulled via the GitHub API
 
+## Architecture
+
+```mermaid
+flowchart TD
+    Q["User Query"] --> P["parse_query"]
+    P --> V["retrieve_vector<br/>dense + BM25 → RRF fusion<br/>→ cross-encoder rerank → top-5 chunks"]
+    P --> G["retrieve_graph<br/>entity match → 1-2 hop traversal<br/>→ serialized subgraph"]
+    V --> CG{"confidence_gate"}
+    G --> CG
+    CG -->|"below threshold<br/>(both arms)"| REF["Refuse"]
+    CG -->|"sufficient evidence<br/>(either arm)"| GEN["Generate<br/>cited answer"]
+
+    style Q fill:#e8eef7,stroke:#4a6fa5
+    style P fill:#e8eef7,stroke:#4a6fa5
+    style V fill:#eaf5ea,stroke:#4a8f4a
+    style G fill:#fbeee0,stroke:#c07a2b
+    style CG fill:#f5e6f5,stroke:#8b4a8b
+    style REF fill:#f7dede,stroke:#a54a4a
+    style GEN fill:#e0f0e8,stroke:#2b8f5a
+```
+
+See `docs/PLAN.md` for the full architecture writeup.
+
 ## One-liner primer
 
 > My RAG app helps open-source contributors and maintainers answer "who

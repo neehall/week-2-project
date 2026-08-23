@@ -8,8 +8,10 @@ asserted.
 
 Status: fully implemented and working end-to-end — ingestion, both
 retrieval arms, the confidence gate, generation, the LangGraph state
-machine, and a chat UI. See **[docs/EVAL_RESULTS.md](docs/EVAL_RESULTS.md)**
-for the real 10-query comparison and its findings.
+machine, and a chat UI. See **[docs/COMPARISON_ANALYSIS.md](docs/COMPARISON_ANALYSIS.md)**
+for the head-to-head comparison summary, or
+**[docs/EVAL_RESULTS.md](docs/EVAL_RESULTS.md)** for the full
+investigation log (bugs found, root causes, every fix).
 
 Full architecture, diagrams, and reasoning: **[Two Arms, One Corpus](docs/PLAN.md)**
 (also published as an interactive artifact — see `docs/PLAN.md` for the link).
@@ -103,7 +105,10 @@ data/
 docs/
   PLAN.md                   # full architecture + eval plan (source of truth)
   SCOPE.md                  # corpus choice, primer, and the filled-out framework
-  EVAL_RESULTS.md           # the actual 10-query comparison, findings, and write-up
+  COMPARISON_ANALYSIS.md    # head-to-head GraphRAG vs. vector-RAG summary (.docx also generated)
+  EVAL_RESULTS.md           # the full investigation log — bugs found, root causes, fixes
+  PROJECT_WRITEUP.md        # project overview, dataset, prompts, iterations (.docx also generated)
+  DEMO_SCRIPT.md            # a query-by-query demo walkthrough
 screenshots/                # the chat UI, working
 ```
 
@@ -114,7 +119,7 @@ screenshots/                # the chat UI, working
 - [x] GraphRAG arm — entity match + 1-2 hop graph traversal
 - [x] Confidence gate — refuse vs. generate, designed before the happy path
 - [x] LangGraph orchestration — `parse_query -> {retrieve_vector, retrieve_graph} -> confidence_gate -> {generate, refuse}`
-- [x] 10-query eval harness + comparison report (`docs/EVAL_RESULTS.md`)
+- [x] 10-query eval harness + comparison report (`docs/COMPARISON_ANALYSIS.md`, `docs/EVAL_RESULTS.md`)
 
 ## Data provenance
 

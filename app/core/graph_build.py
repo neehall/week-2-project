@@ -33,10 +33,19 @@ from dataclasses import dataclass, field
 # integrations this repo's PRs actually touch (seen as conventional-commit
 # title scopes, e.g. "fix(anthropic): ...") plus a few common libraries/
 # infra terms that show up in dependency-bump titles or body text.
+#
+# Deliberately excludes "langchain" itself: it's a valid conventional-
+# commit scope in this corpus, but it's also the name of the product
+# every query is implicitly about — including it caused a real false
+# positive (query 9's refusal test, "Who approved LangChain's pricing
+# model?", matched skill:langchain purely because the product's own name
+# appeared in the question, and the graph arm answered instead of
+# refusing). A "skill" node should represent something distinct from the
+# repo itself, not the repo's own name.
 KNOWN_SKILLS = {
     "openai", "anthropic", "deepseek", "fireworks", "mistralai", "openrouter",
     "xai", "perplexity", "huggingface", "exa", "nomic", "langgraph",
-    "langchain", "pydantic", "fastapi", "docker", "redis", "postgres",
+    "pydantic", "fastapi", "docker", "redis", "postgres",
     "pytest", "asyncio", "graphql", "grpc", "websocket", "typescript", "rust",
 }
 

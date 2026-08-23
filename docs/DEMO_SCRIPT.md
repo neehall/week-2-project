@@ -2,7 +2,9 @@
 
 A ~4-5 minute walkthrough. Each query below is picked to demonstrate one
 specific, real finding from `docs/EVAL_RESULTS.md` — not a random sample.
-Worth pulling up on screen once, briefly, before the live queries:
+See `docs/COMPARISON_ANALYSIS.md` for the head-to-head summary this
+script is built around. Worth pulling up on screen once, briefly, before
+the live queries:
 
 ```mermaid
 flowchart TD
@@ -89,10 +91,12 @@ generation ever runs.
 
 ## 6. Close (30s)
 
-- Pull up `docs/EVAL_RESULTS.md`'s KPI table (or re-run
+- Pull up `docs/COMPARISON_ANALYSIS.md`'s KPI table (or re-run
   `evaluation.run_comparison()` live in a terminal if you want the
-  observability output on screen) — mean faithfulness ~0.97 on both arms
+  observability output on screen) — mean faithfulness ~0.99 on both arms
   when they answer, correct refusal on both refusal-test queries.
-- One sentence on what's still open: an unresolved exact-match miss
-  (`StreamClosedError`) and the vector confidence threshold likely
-  needing retuning at this corpus size — named explicitly, not hidden.
+- One sentence on what's still open: the graph arm's entity matcher needs
+  a query to *name* a PR/username/module rather than describe it (queries
+  2 and 6), and a real entity-collapse issue (14 bot PRs merged onto one
+  "unknown" node) is real but currently invisible to the eval's probe for
+  it — both named explicitly in `docs/EVAL_RESULTS.md`, not hidden.

@@ -5,9 +5,9 @@
     "faithfulness": 1.0,
     "relevance": 0.2,
     "correctly_refused": null,
-    "latency_seconds": 8.06,
+    "latency_seconds": 7.76,
     "refused": false,
-    "answer": "The provided context doesn't include authorship information for PR #39832. The only chunk about it, [pr-39832-0], contains just the title and description (\"release(core): 1.6.1\" / \"Release 1.6.1\") with no author field.\n\nFor comparison, the context does surface contributor mentions for other PRs \u2014 e.g. a co-author credit to Soban Shankar on PR #39602 [pr-39602-9], and co-authorship given to @philemon-otera on PR #39590 [pr-39590-0] \u2014 but nothing analogous is present for #39832.\n\nIf you can supply the PR metadata (author/creator field) or a graph node for that PR, I can answer definitively."
+    "answer": "The provided context doesn't include authorship information for PR #39832. The only thing available is the chunk [pr-39832-0], which shows the PR title \"release(core): 1.6.1\" and its body \"Release 1.6.1\" \u2014 no author, contributor node, or co-author trailer is present.\n\nFor comparison, the surrounding chunks do occasionally surface attribution details (e.g., [pr-39602-9] includes a \"Co-authored-by: Soban Shankar\" trailer, and [pr-39590-0] mentions giving co-authorship to @philemon-otera), but nothing equivalent exists for #39832. I'd need additional context (such as the PR's author metadata) to answer this."
   },
   {
     "query_id": 1,
@@ -15,19 +15,19 @@
     "faithfulness": 1.0,
     "relevance": 1.0,
     "correctly_refused": null,
-    "latency_seconds": 2.23,
+    "latency_seconds": 2.54,
     "refused": false,
-    "answer": "**eyurtsev** authored PR #39832 [contributor:eyurtsev], which is titled \"release(core): 1.6.1\" and was merged on 2026-08-21 [pr:39832]. That PR also touched `version.py` [module:version.py]."
+    "answer": "PR #39832 (*\"release(core): 1.6.1\"*, merged 2026-08-21) was authored by **eyurtsev** [contributor:eyurtsev] [pr:39832].\n\nThe graph records an explicit `authored` edge from `contributor:eyurtsev` to `pr:39832` [contributor:eyurtsev]. That PR also merged changes into `version.py` [module:version.py]."
   },
   {
     "query_id": 2,
     "arm": "vector",
     "faithfulness": 0.97,
-    "relevance": 0.55,
+    "relevance": 0.5,
     "correctly_refused": null,
-    "latency_seconds": 11.29,
+    "latency_seconds": 8.13,
     "refused": false,
-    "answer": "**Reviewer: not stated in the provided context.**\n\nThe context contains no reviewer information for PR #39602. The only person named is a co-author credit \u2014 \"Co-authored-by: Soban Shankar <165470467+Soban-2004@users.noreply.github.com>\" [pr-39602-9] \u2014 which is a co-authorship trailer, not a review. If you need the reviewer, that would have to come from the PR's review metadata, which isn't included here.\n\n**What it touches:**\n\nThe PR is scoped to `core` (titled `fix(core): ...`) and specifically changes `StructuredTool._injected_args_keys` [pr-39602-1]. The described behavior changes are:\n\n- `StructuredTool` now resolves annotations with `typing.get_type_hints(..., include_extras=True)` before identifying injected parameters [pr-39602-1].\n- If an unrelated forward reference blocks resolving the full signature, each string annotation is resolved independently so resolvable injected args are preserved [pr-39602-1] \u2014 illustrated by an example mixing an unresolvable `\"SomeTypeThatDoesNotExist\"` with a resolvable `\"ToolRuntime\"` [pr-39602-4].\n- Callable wrappers resolve annotations from the source of their effective signature, honoring `__wrapped__` and `__signature__`; other callable objects use their `__call__` method [pr-39602-1] (see the `MyCallableTool.__call__` example [pr-39602-6]).\n- `functools.partial` callables retain their effective signature, so already-bound injected args stay excluded [pr-39602-1], [pr-39602-9].\n\nThe motivating bug: tools with a custom `args_schema` could drop injected arguments such as `ToolRuntime` when the wrapped function's module uses postponed annotations (`from __future__ import annotations`), since `_injected_args_keys` read raw `signature()` annotations stored as plain strings [pr-39602-1]. It closes #39568 and is related to #33999 [pr-39602-0].\n\nOne caveat flagged in the PR body: this expands the surface area for arbitrary code execution during tool setup, since `typing.get_type_hints` *evaluates* string annotations, so wrapped callables must be trusted application code [pr-39602-0]."
+    "answer": "**Short answer: the provided context doesn't identify any reviewers of PR #39602.**\n\nWhat the context *does* tell us:\n\n- **Co-author (not a reviewer):** the PR description includes a trailer `Co-authored-by: Soban Shankar <165470467+Soban-2004@users.noreply.github.com>` [pr-39602-9]. This indicates co-authorship of commits, not a review, and no review/approval records are present in the context.\n\n- **What it touches:** the change is scoped to `langchain-core` \u2014 specifically `StructuredTool._injected_args_keys`, per the PR title \"fix(core): resolve postponed annotations in `StructuredTool._injected_args_keys`\" [pr-39602-1]. The fix makes `StructuredTool` resolve annotations via `typing.get_type_hints(..., include_extras=True)` before identifying injected parameters, falling back to resolving each string annotation independently when an unrelated forward reference blocks resolving the full signature; it also handles callable wrappers (honoring `__wrapped__` / `__signature__`), other callable objects (via `__call__`), and `functools.partial` callables so already-bound injected args stay excluded [pr-39602-1][pr-39602-9].\n\n- **Context/linked issues:** the PR closes #39568 and is related to #33999, and carries a warning that detecting injected arguments now evaluates string annotations, expanding the surface area for arbitrary code execution during tool setup [pr-39602-0].\n\nIf you need the actual reviewer list, that information would have to come from the PR's review metadata, which isn't in the supplied context."
   },
   {
     "query_id": 2,
@@ -45,29 +45,29 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.27,
+    "latency_seconds": 0.35,
     "refused": true,
     "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
   },
   {
     "query_id": 3,
     "arm": "graph",
-    "faithfulness": 0.95,
+    "faithfulness": 0.97,
     "relevance": 0.9,
     "correctly_refused": null,
-    "latency_seconds": 20.59,
+    "latency_seconds": 17.24,
     "refused": false,
-    "answer": "Based on the graph, here is every contributor node connected (directly or via a PR/issue) to `module:agents` [module:agents].\n\n## Contributors with merged PRs in the agents module\n\n| Contributor | Merged PRs |\n|---|---|\n| **ccurme** [contributor:ccurme] | `pr:39805` [pr:39805], `pr:39803` [pr:39803], `pr:39538` [pr:39538], `pr:39729` [pr:39729], `pr:39723` [pr:39723], `pr:39722` [pr:39722], `pr:39632` [pr:39632], `pr:39620` [pr:39620], `pr:38910` [pr:38910], `pr:39366` [pr:39366] |\n| **hntrl** [contributor:hntrl] | `pr:39284` [pr:39284] |\n| **syyy44** [contributor:syyy44] | `pr:39754` [pr:39754] |\n| **Yigtwxx** [contributor:Yigtwxx] | `pr:38960` [pr:38960] |\n| **mdrxy** [contributor:mdrxy] | `pr:39705` [pr:39705] |\n\n## Contributors who reviewed agents PRs\n\n- **hntrl** \u2014 reviewed `pr:39538` [contributor:hntrl]\n- **ccurme** \u2014 reviewed `pr:39538`, `pr:39754`, `pr:39284`, `pr:38910` [contributor:ccurme]\n- **thushanth-bengre-langchain** \u2014 reviewed `pr:39538` [contributor:thushanth-bengre-langchain]\n- **eyurtsev** \u2014 reviewed `pr:39705` [contributor:eyurtsev]\n- **sydney-runkle** \u2014 reviewed `pr:38910` [contributor:sydney-runkle]\n\n## Contributors who authored issues discussing the agents module\n\n- **EduardoGomezHST** \u2014 `issue:37970` [contributor:EduardoGomezHST]\n- **dlwldn30** \u2014 `issue:39842` [contributor:dlwldn30]\n- **sophieamoure2026-ui** \u2014 `issue:39728` [contributor:sophieamoure2026-ui]\n- **chinmayv095** \u2014 `issue:39333` [contributor:chinmayv095]\n- **yangbaechu** \u2014 `issue:35475` [contributor:yangbaechu]\n- **Yigtwxx** \u2014 `issue:38893` (also reviewed it) [contributor:Yigtwxx]\n- **ZHUI33** \u2014 `issue:39738` [contributor:ZHUI33]\n- **Misterio070** \u2014 `issue:39772` [contributor:Misterio070]\n- **YuhaoLin2005** \u2014 `issue:39073` [contributor:YuhaoLin2005]\n- **khteh** \u2014 `issue:36889` [contributor:36889 / contributor:khteh]\n- **pufuki** \u2014 `issue:39727` [contributor:pufuki]\n- **Alioth99** \u2014 `issue:31802` [contributor:Alioth99]\n- **gouveags** \u2014 `issue:39623` [contributor:gouveags]\n- **syyy44** \u2014 also authored and reviewed `issue:39757` (linked to agents via `pr:39754`) [contributor:syyy44]\n\n## Full list (20 unique contributors)\n\nEduardoGomezHST, hntrl, dlwldn30, eyurtsev, sophieamoure2026-ui, syyy44, chinmayv095, ccurme, yangbaechu, Yigtwxx, ZHUI33, mdrxy, Misterio070, thushanth-bengre-langchain, YuhaoLin2005, khteh, sydney-runkle, pufuki, Alioth99, gouveags.\n\n**Caveat:** `pr:39338` [pr:39338] is in the context and relates to `issue:39333`, but the provided graph lists no author or reviewer edges for it, so any contributor behind it is not represented here."
+    "answer": "Below are all contributor nodes in the provided subgraph, grouped by how they connect to `module:agents`. Note that the graph has no direct `contributor -> module` edges, so these links are inferred through PRs merged into the module or issues that discuss it.\n\n**Authored PRs merged into `module:agents`**\n- **ccurme** \u2014 pr:39805, pr:39803, pr:39538, pr:39729, pr:39723, pr:39722, pr:39632, pr:39620, pr:38910, pr:39366 [contributor:ccurme][pr:39805][pr:39803][pr:39538][pr:39729][pr:39723][pr:39722][pr:39632][pr:39620][pr:38910][pr:39366]\n- **Yigtwxx** \u2014 pr:38960 (also authored and reviewed issue:38893) [contributor:Yigtwxx][pr:38960][issue:38893]\n- **syyy44** \u2014 pr:39754 (also authored/reviewed issue:39757) [contributor:syyy44][pr:39754][issue:39757]\n- **hntrl** \u2014 pr:39284 (also reviewed pr:39538) [contributor:hntrl][pr:39284][pr:39538]\n- **mdrxy** \u2014 pr:39705 [contributor:mdrxy][pr:39705]\n\n**Reviewed PRs merged into `module:agents`**\n- **thushanth-bengre-langchain** \u2014 reviewed pr:39538 [contributor:thushanth-bengre-langchain][pr:39538]\n- **sydney-runkle** \u2014 reviewed pr:38910 [contributor:sydney-runkle][pr:38910]\n- **eyurtsev** \u2014 reviewed pr:39705 [contributor:eyurtsev][pr:39705]\n\n**Authored issues that discuss `module:agents`**\n- **chinmayv095** \u2014 issue:39333 [contributor:chinmayv095][issue:39333]\n- **Alioth99** \u2014 issue:31802 [contributor:Alioth99][issue:31802]\n- **EduardoGomezHST** \u2014 issue:37970 [contributor:EduardoGomezHST][issue:37970]\n- **YuhaoLin2005** \u2014 issue:39073 [contributor:YuhaoLin2005][issue:39073]\n- **ZHUI33** \u2014 issue:39738 [contributor:ZHUI33][issue:39738]\n- **dlwldn30** \u2014 issue:39842 [contributor:dlwldn30][issue:39842]\n- **sophieamoure2026-ui** \u2014 issue:39728 [contributor:sophieamoure2026-ui][issue:39728]\n- **khteh** \u2014 issue:36889 [contributor:khteh][issue:36889]\n- **yangbaechu** \u2014 issue:35475 [contributor:yangbaechu][issue:35475]\n- **gouveags** \u2014 issue:39623 [contributor:gouveags][issue:39623]\n- **Misterio070** \u2014 issue:39772 [contributor:Misterio070][issue:39772]\n- **pufuki** \u2014 issue:39727 [contributor:pufuki][issue:39727]\n\nThat is all 20 contributors present in the context. Caveat: this list is limited to the supplied subgraph \u2014 it may not be the complete historical contributor set for the agents module, and issue authorship is a weaker signal of \"contribution\" than merged code."
   },
   {
     "query_id": 4,
     "arm": "vector",
     "faithfulness": 0.98,
-    "relevance": 0.98,
+    "relevance": 1.0,
     "correctly_refused": null,
-    "latency_seconds": 11.88,
+    "latency_seconds": 11.1,
     "refused": false,
-    "answer": "Shell resources leak on interrupt because the cleanup mechanism has two mutually-blocking failure modes:\n\n**1. The explicit cleanup path is never reached.** Cleanup is normally triggered by `after_agent`, which fetches `shell_session_resources` from state and, in a `finally` block, calls `resources.finalizer()` \u2014 the `weakref.finalize` that performs `session.stop()` plus `tempdir.cleanup()` [issue-39700-8]. On interrupt paths \u2014 HITL, `GraphBubbleUp`, a checkpointer pause, a worker crash, or an abandoned thread \u2014 the graph simply never reaches `after_agent`, so that finalizer is never explicitly invoked [issue-39700-9].\n\n**2. The garbage-collection fallback can't fire either.** The `weakref.finalize` on `_SessionResources` only runs when that object is actually garbage-collected. But on interrupt, `shell_session_resources` remains in checkpointed state, which pins `_SessionResources` alive indefinitely \u2014 so the finalizer callback never fires [issue-39700-9][issue-39700-6].\n\n**Resulting observable behavior** [issue-39700-6]:\n- The bash subprocess keeps running after interrupt/abandon\n- Reader threads remain active\n- The temp workspace directory is not removed (when `workspace_root` is `None`)\n\n**Impact** [issue-39700-9]: long-running servers using HITL/checkpointers accumulate zombie shell processes; temp directories under `SHELL_TEMP_PREFIX` leak disk space; reader threads run until process exit; and with `HostExecutionPolicy` there's a security concern, since orphaned shells continue to accept further commands.\n\nThe gap is also visible in testing: `test_shell_middleware_resumable_after_interrupt` simulates an interrupt by preserving state and skipping `after_agent`, then verifies session *reuse* on resume \u2014 but never asserts cleanup for a run that is **abandoned** rather than resumed [issue-39700-9]. The repro script in the issue demonstrates this directly by dropping references to `state`, `resources`, and `middleware`, then using `os.kill(pid, 0)` to show the subprocess is still alive [issue-39700-4].\n\n**Proposed fixes under discussion** [issue-39700-10]: a TTL-based side-channel cache (similar to #35948) storing live resources outside checkpointed state keyed by `thread_id`; an `on_run_end`/graph lifecycle hook covering interrupt exits; explicit cleanup when HITL rejection terminates the graph; or a process-group kill via `__del__`/weakref to at least guarantee the subprocess dies."
+    "answer": "## Root cause\n\nThe `ShellToolMiddleware` relies on two cleanup mechanisms, and both fail on interrupt paths:\n\n**1. `after_agent` never runs.** The explicit cleanup lives in `after_agent`, which pulls `shell_session_resources` out of state, runs shutdown commands, and then calls `resources.finalizer()` \u2014 the `weakref.finalize` that performs `session.stop()` + `tempdir.cleanup()` [issue-39700-8]. During normal agent completion this is invoked explicitly, but on interrupt paths \u2014 HITL, `GraphBubbleUp`, a checkpointer pause, a worker crash, or an abandoned thread \u2014 the graph never reaches `after_agent` [issue-39700-9].\n\n**2. The `weakref.finalize` fallback can't fire either.** Cleanup via `weakref.finalize` on `_SessionResources` only runs when that object is garbage-collected, but `shell_session_resources` remains in checkpointed state, keeping `_SessionResources` alive indefinitely [issue-39700-9]. In other words, the finalizer callback never fires because `_SessionResources` is pinned by checkpointed state [issue-39700-6].\n\n## Observable symptoms\n\n- The shell subprocess (bash) keeps running after interrupt/abandon [issue-39700-6]\n- Reader threads remain active [issue-39700-6][issue-39700-9]\n- The temp workspace directory is not removed when `workspace_root` is `None` [issue-39700-6]\n\nThe repro demonstrates this by running a command, skipping `after_agent`, dropping all references (`del state`, `del resources`, `del middleware`), then checking with `os.kill(pid, 0)` that the subprocess is still alive [issue-39700-4].\n\n## Why it wasn't caught\n\nThe existing resumability test `test_shell_middleware_resumable_after_interrupt` simulates an interrupt by preserving state and not calling `after_agent`, then verifies session reuse on resume \u2014 but it never asserts cleanup when a run is *abandoned* instead of resumed [issue-39700-9].\n\n## Impact and proposed fixes\n\nImpact includes zombie shell processes accumulating on long-running servers with HITL/checkpointer, disk leaks under `SHELL_TEMP_PREFIX`, lingering reader threads, and a security concern with `HostExecutionPolicy` since orphaned shells accept further commands [issue-39700-9].\n\nFixes under discussion: a TTL-based side-channel cache keyed by `thread_id` (similar to #35948), an `on_run_end`/graph lifecycle hook covering interrupt exits, explicit cleanup on HITL rejection, or a process-group kill via `__del__`/weakref to at least guarantee the subprocess dies [issue-39700-10]."
   },
   {
     "query_id": 4,
@@ -85,9 +85,9 @@
     "faithfulness": 1.0,
     "relevance": 0.9,
     "correctly_refused": null,
-    "latency_seconds": 5.19,
+    "latency_seconds": 6.01,
     "refused": false,
-    "answer": "Two PRs in the provided context reference `StreamClosedError`, both of which are dependency bumps of h2 from 4.3.0 to 4.4.1:\n\n- **PR #39324** \u2014 \"chore: bump h2 from 4.3.0 to 4.4.1 in /libs/langchain_v1\" [pr-39324-1]\n- **PR #39325** \u2014 \"chore: bump h2 from 4.3.0 to 4.4.1 in /libs/langchain\" [pr-39325-1]\n\nIn both, the mention comes from the h2 changelog entry noting that `Stream.end_stream()` now raises `NoSuchStreamError` or `StreamClosedError` exceptions instead of a generic `KeyError` [pr-39324-1][pr-39325-1].\n\nNote that the two PR descriptions are otherwise identical in the context provided \u2014 they differ only in the target directory (`/libs/langchain_v1` vs `/libs/langchain`) [pr-39324-1][pr-39325-1]."
+    "answer": "Two PRs in the provided context reference `StreamClosedError`, both in identical h2 changelog excerpts:\n\n- **PR #39324** \u2014 \"chore: bump h2 from 4.3.0 to 4.4.1 in /libs/langchain_v1\" [pr-39324-1]\n- **PR #39325** \u2014 \"chore: bump h2 from 4.3.0 to 4.4.1 in /libs/langchain\" [pr-39325-1]\n\nIn both, the reference comes from the h2 4.4.1 changelog entry stating that `Stream.end_stream()` now raises `NoSuchStreamError` or `StreamClosedError` exceptions instead of a generic `KeyError` [pr-39324-1][pr-39325-1].\n\nNote: the two PRs differ only in the target directory \u2014 `/libs/langchain_v1` for #39324 [pr-39324-1] and `/libs/langchain` for #39325 [pr-39325-1]. The other items in the context (issues #39747 and #39746, about dropped streamed refusals) do not mention `StreamClosedError` [issue-39747-2][issue-39746-1][issue-39746-4]."
   },
   {
     "query_id": 5,
@@ -102,12 +102,12 @@
   {
     "query_id": 6,
     "arm": "vector",
-    "faithfulness": 0.98,
+    "faithfulness": 1.0,
     "relevance": 0.6,
     "correctly_refused": null,
-    "latency_seconds": 10.15,
+    "latency_seconds": 8.71,
     "refused": false,
-    "answer": "## What was decided\n\nPR #39538 introduced **standard exception types in `langchain-core` for common model failures** \u2014 authentication, invalid request, rate limit, timeout, and similar conditions [pr-39538-0].\n\nKey design points visible in the context:\n\n- **Dual inheritance for backward compatibility.** Integration packages raise subclasses that inherit from *both* the provider SDK's own exception type and the LangChain one, so existing code that catches provider-specific exceptions keeps working [pr-39538-0].\n- **Retryability is a first-class attribute.** Each type carries `is_retryable`, which retry middleware respects \u2014 e.g. errors from a bad API key are not retried, while rate limits or server errors are retried as before [pr-39538-2].\n- **Provider-agnostic contract.** As quoted in a later issue, `ModelError` documents that subclasses \"correspond to conditions that model providers report consistently, keyed to the HTTP status they surface it with, so the same condition maps to the same exception type regardless of provider\" [issue-39794-5].\n\nUsage looks like catching a specific type such as `ModelTimeoutError` from `langchain_core.exceptions` [pr-39538-1], or catching the base `ModelError` and inspecting `e.is_retryable` [pr-39538-3].\n\n## Follow-up\n\nThe contract isn't uniformly implemented: issue #39794 reports that `langchain-mistralai` does not classify timeout and connection errors as model errors, i.e. it \"does not hold up its side\" of the provider-agnostic mapping as of `upstream/master` (`3478c28ef`) [issue-39794-5].\n\n## Who approved it\n\n**The provided context doesn't say.** None of the chunks include reviewers, approvals, or merge metadata for PR #39538 \u2014 only its description, example snippets, and a downstream issue referencing it. I'd need the PR's review/timeline data to answer that part."
+    "answer": "## What was decided\n\nPR #39538 introduces **standard exception types in `langchain-core` for common model failures** \u2014 authentication, invalid request, rate limit, timeout, and similar conditions [pr-39538-0].\n\nKey design points supported by the context:\n\n- **Dual inheritance for backward compatibility.** Integration packages raise subclasses that inherit from *both* the provider SDK's own exception type and the LangChain one, so existing code that catches provider-specific exceptions keeps working [pr-39538-0].\n- **Retryability metadata.** Each type carries an `is_retryable` attribute, which retry middleware respects \u2014 e.g. errors from a bad API key are not retried, while rate limits or server errors are retried as before [pr-39538-2].\n- **Usage.** Callers can catch a specific type such as `ModelTimeoutError` from `langchain_core.exceptions` [pr-39538-1], or catch the base `ModelError` and inspect `e.is_retryable` [pr-39538-3].\n- **Provider-consistency contract.** A later issue quotes the `ModelError` docstring, which states that subclasses correspond to conditions providers report consistently, keyed to the HTTP status they surface it with, \"so the same condition maps to the same exception type regardless of provider\" [issue-39794-5]. That issue reports that `langchain-mistralai` does not uphold this for timeouts and connection failures [issue-39794-5].\n\n## Who approved it\n\n**The provided context does not say.** None of the chunks contain reviewer names, approvals, or merge/sign-off information for PR #39538 \u2014 they only cover the PR's description, examples, and a follow-up issue referencing it. I can't determine the approver without additional context (e.g., the PR's review or graph data)."
   },
   {
     "query_id": 6,
@@ -125,7 +125,7 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.45,
+    "latency_seconds": 0.25,
     "refused": true,
     "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
   },
@@ -165,7 +165,7 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": true,
-    "latency_seconds": 0.36,
+    "latency_seconds": 0.17,
     "refused": true,
     "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
   },
@@ -185,7 +185,7 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": true,
-    "latency_seconds": 0.18,
+    "latency_seconds": 0.17,
     "refused": true,
     "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
   },

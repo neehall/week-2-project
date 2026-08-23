@@ -2,6 +2,7 @@
 
 **Project:** Two Arms, One Corpus — hybrid vector-RAG vs. GraphRAG, compared head-to-head
 **Repo:** github.com/neehall/week-2-project
+**Comparison results:** `docs/COMPARISON_ANALYSIS.md` (head-to-head summary) / `docs/EVAL_RESULTS.md` (full investigation log)
 
 ## 1. Project Overview
 
@@ -210,8 +211,10 @@ The notable iterations:
    *every* chunk (not just the lead-in segment, which was the original,
    incomplete version of this fix) — re-verified against the exact
    failing queries and re-ran the full 10-query comparison, confirming
-   the fix (vector arm went from 3/10 to 6/10 queries answered, with
-   faithfulness holding steady, not dropping).
+   the fix (vector arm went from 3/10 to 5/10 queries answered, with
+   faithfulness holding steady, not dropping — 6/10 unique queries get
+   an answer from at least one arm, since graph uniquely answers one
+   the vector arm doesn't).
 
 8. **A gap against the original project brief, found by re-reading the
    brief against the actual code rather than from memory.** The brief
@@ -231,6 +234,22 @@ The notable iterations:
    example query shape ("what did X work on and what tools did they
    use") — it now answers with a dedicated, fully-cited "Tools / skills
    used" section.
+
+9. **The skill-node fix above introduced its own regression, caught by
+   re-running the full comparison rather than trusting the one query it
+   was built for.** Adding `"langchain"` to the curated skill vocabulary
+   (a genuine conventional-commit scope in this corpus) broke a refusal
+   test: "Who approved LangChain's pricing model?" started getting
+   *answered* by the graph arm instead of refused, because the product's
+   own name in the question false-matched `skill:langchain` — a false
+   positive that would trigger on almost any query mentioning the
+   product by name, since that's the subject of the entire corpus.
+   Root cause: unlike the other 11 tool names (openai, anthropic,
+   deepseek, ...), "langchain" isn't a tool distinct from the repo
+   itself. Fixed by removing it from the vocabulary; re-verified the
+   refusal test passes again and the original tools-traversal query
+   still works; re-ran the full 10-query comparison once more to confirm
+   no other regression before reporting final numbers.
 
 ## 5. Learnings / Observations
 

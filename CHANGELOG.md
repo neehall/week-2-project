@@ -7,6 +7,35 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `docs/COMPARISON_ANALYSIS.md` / `docs/COMPARISON_ANALYSIS.docx` — a
+  focused, presentation-oriented GraphRAG-vs-vector-RAG comparison
+  (methodology, KPI table, side-by-side per-query results, analysis of
+  when each arm wins and why, bottom line), distinct from
+  `docs/EVAL_RESULTS.md`'s full investigation log. Linked from every
+  other doc (`README.md`, `docs/PLAN.md`, `docs/SCOPE.md`,
+  `docs/DEMO_SCRIPT.md`, `docs/PROJECT_WRITEUP.md`).
+
+### Fixed
+- `app/core/graph_build.py` — found and fixed a regression the skill-node
+  feature introduced: `"langchain"` was in `KNOWN_SKILLS`, but it's also
+  the name of the product every query is implicitly about, so "Who
+  approved LangChain's pricing model?" (a refusal test) false-matched
+  `skill:langchain` and the graph arm answered instead of refusing.
+  Caught by re-running the full comparison after the skill-node change
+  rather than only checking the query it was built for — refusal-test
+  accuracy dropped from 1.0 to 0.5, an unmissable signal. Removed
+  "langchain" from the vocabulary (it isn't a tool distinct from the
+  repo itself, unlike the other 11 entries); re-verified the refusal
+  test and the original tools-traversal query both work correctly, then
+  re-ran the full 10-query comparison to confirm no other regression.
+  `docs/EVAL_RESULTS.md` and `docs/PROJECT_WRITEUP.md` updated with this
+  finding and the final, stable numbers.
+- `docs/DEMO_SCRIPT.md` — its closing section referenced the
+  `StreamClosedError` miss and threshold-retuning as still-open items;
+  both were fixed several commits ago and the doc was never updated.
+  Corrected to reference the two items that are actually still open.
+
+### Added
 - Architecture diagram added across all documentation. `README.md`,
   `docs/PLAN.md` (replacing its plain-text ASCII version),
   `docs/SCOPE.md`, `docs/EVAL_RESULTS.md`, and `docs/DEMO_SCRIPT.md` use

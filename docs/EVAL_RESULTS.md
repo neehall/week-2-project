@@ -31,12 +31,16 @@ flowchart TD
     style GEN fill:#e0f0e8,stroke:#2b8f5a
 ```
 
-**This is the third and final pass.** The first pass (10-query set written
-before any corpus existed) produced 20/20 refusals. The second pass
-(queries rewritten against real content) produced real signal but flagged
-two "open items" as needing more investigation. This pass digs into both,
-finds their actual root causes (different, and more specific, than
-originally guessed), fixes them, and reports the final numbers below.
+**This is the fourth and final pass.** The first pass (10-query set
+written before any corpus existed) produced 20/20 refusals. The second
+pass (queries rewritten against real content) produced real signal but
+flagged two "open items" as needing more investigation. The third pass
+dug into both, found their actual root causes, and fixed them. This
+fourth pass adds a "skill" node type (closing a gap against the original
+project brief), catches and fixes a regression that change introduced,
+and reports the final numbers below. A comparison-focused summary of
+this data lives in `docs/COMPARISON_ANALYSIS.md`; this document is the
+full investigation log.
 
 ## Observability KPIs
 
@@ -44,35 +48,41 @@ originally guessed), fixes them, and reports the final numbers below.
 --- Observability KPIs ---           vector        graph
 --------------------------------------------------------
 queries run                              10           10
-answered                                   6            2
-refused                                    4            8
-mean faithfulness                      0.988        0.975
-mean relevance                         0.688        0.950
-refusal-test accuracy                  1.000        1.000
-mean latency (s)                       6.283        2.283
-p95 latency (s)                       11.884        18.98
+answered                                    5            2
+refused                                     5            8
+mean faithfulness                       0.990        0.985
+mean relevance                          0.640        0.950
+refusal-test accuracy                   1.000        1.000
+mean latency (s)                        4.285        1.978
+p95 latency (s)                        11.103       17.241
 ```
 
 (`app.core.evaluation.print_kpi_summary()` — called automatically at the
-end of every `run_comparison()` — produces this table for any future run.)
+end of every `run_comparison()` — produces this table for any future run.
+LLM-judge faithfulness/relevance scores vary a few hundredths between
+runs on the same query — expected noise from the judge itself, not a
+pipeline change; which queries answer vs. refuse has been stable across
+every re-run since the chunking fix below.)
 
-Vector answers jumped from 3/10 to 6/10 after the chunking fix below,
-faithfulness held (didn't drop from answering more), and refusal-test
-accuracy stayed perfect on both arms throughout every pass.
+Vector went from 3/10 to 5/10 queries answered after the chunking fix
+below (6/10 unique queries get an answer from at least one arm, since
+graph uniquely answers query 3), faithfulness held (didn't drop from
+answering more), and refusal-test accuracy is perfect on both arms in
+this final run.
 
 ## Per-query result
 
 | # | Type | Expected | Vector | Graph | What happened |
 |---|---|---|---|---|---|
 | 1 | single_hop_factual | tie | **answered** (1.00/0.20) | **answered** (1.00/1.00) | Now a genuine tie, as originally expected — see "PR numbers weren't embedded" below. |
-| 2 | multi_hop_relational | graph | **answered** (0.97/0.55) | refused | Flipped from expected — the graph arm's entity matcher needs a query to *name* the PR, not describe it. |
-| 3 | aggregation_list | graph | refused | **answered** (0.95/0.90) | Matches expectation — graph traversal is the natural fit. |
-| 4 | semantic_exploratory | vector | **answered** (0.98/0.98) | refused | Matches expectation cleanly. |
+| 2 | multi_hop_relational | graph | **answered** (0.97/0.50) | refused | Flipped from expected — the graph arm's entity matcher needs a query to *name* the PR, not describe it. |
+| 3 | aggregation_list | graph | refused | **answered** (0.97/0.90) | Matches expectation — graph traversal is the natural fit. |
+| 4 | semantic_exploratory | vector | **answered** (0.98/1.00) | refused | Matches expectation cleanly. |
 | 5 | exact_match_lexical | vector_hybrid | **answered** (1.00/0.90) | refused | Fixed — was refusing on both arms; see "PR numbers weren't embedded" below. |
-| 6 | decision_provenance | graph | **answered** (0.98/0.60) | refused | Flipped, same root cause as #2. |
+| 6 | decision_provenance | graph | **answered** (1.00/0.60) | refused | Flipped, same root cause as #2. |
 | 7 | ambiguous_entity | stress_test | refused | refused | Didn't test what it was designed to — see "Ambiguous entity" below. |
 | 8 | cross_document_synthesis | tie | refused | refused | Both correctly refuse but for different reasons (aggregation phrasing vs. no label/tag entity type). |
-| 9 | out_of_corpus | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
+| 9 | out_of_corpus | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works (see finding 6 for a regression that briefly broke this on the graph arm, caught before being reported here). |
 | 10 | plausible_but_unindexed | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
 
 ## Findings
@@ -209,6 +219,25 @@ plain-text answer the other time. Fixed by raising `max_tokens` to 1024
 setting `output_config={"effort": "low"}` (grading is a simple task, per
 the model's own guidance). Re-verified against real retrieved context
 before trusting any subsequent run.
+
+### 6. Adding "skill" nodes briefly broke a refusal test (caught before it shipped)
+
+Closing the "skill" node type gap (see `docs/PROJECT_WRITEUP.md`
+iteration 8) added `"langchain"` to the curated `KNOWN_SKILLS` vocabulary
+— a real conventional-commit scope in this corpus (`chore(langchain):
+...`). Re-running the full comparison afterward showed graph refusal-test
+accuracy drop to 0.5: query 9 ("Who approved **LangChain**'s pricing
+model?") started getting *answered* instead of refused, because the
+product's own name in the question false-matched `skill:langchain` —
+every query about "LangChain" (extremely common, since that's the
+subject of the whole corpus) risked the same false positive. Root cause:
+"langchain" isn't actually a distinct tool separate from the repo itself,
+unlike the other 11 entries (openai, anthropic, deepseek, ...), so it
+shouldn't have been in the skill vocabulary at all. Fixed by removing it
+from `KNOWN_SKILLS`; re-verified query 9 refuses again and the
+tools-traversal query used to validate the skill feature still works;
+re-ran the full 10-query comparison to confirm no other regression — the
+numbers in this document are from that clean run.
 
 ## Corpus
 

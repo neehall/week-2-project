@@ -16,6 +16,21 @@ from dotenv import load_dotenv
 # quietly if .env doesn't exist yet.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
+# On Streamlit Community Cloud, secrets are configured via the app's web
+# UI and only reachable through st.secrets — they are NOT injected into
+# os.environ automatically. Bridge them in here so every module can keep
+# reading os.environ (via anthropic.Anthropic(), github_token(), etc.)
+# regardless of whether this is running locally (.env) or deployed.
+# Guarded so this is a silent no-op outside a running Streamlit app.
+try:
+    import streamlit as st
+
+    for _key in ("ANTHROPIC_API_KEY", "GITHUB_TOKEN"):
+        if _key not in os.environ and _key in st.secrets:
+            os.environ[_key] = st.secrets[_key]
+except Exception:
+    pass
+
 # --- Corpus -----------------------------------------------------------------
 
 GITHUB_REPO = "langchain-ai/langchain"

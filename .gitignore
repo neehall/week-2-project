@@ -11,8 +11,11 @@ BUILD_WRITEUP.txt
 .chroma/
 chroma_db/
 
-# Raw pulled corpus — regenerable via app/core/ingestion.py, keep repo small
-data/corpus/raw/
+# Raw pulled corpus is committed (not ignored) — the Streamlit Community
+# Cloud deploy needs it present in the repo, since the deployed filesystem
+# has nothing outside git and can't practically run live ingestion on
+# every cold start. Regenerate via `python -m app.core.ingestion` for a
+# fresher pull; re-commit if you want the deployed app to reflect it.
 
 # API keys / secrets
 .env

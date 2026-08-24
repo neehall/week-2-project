@@ -66,8 +66,9 @@ pip install -r requirements.txt
 cp .env.example .env        # fill in GITHUB_TOKEN and ANTHROPIC_API_KEY
 ```
 
-Pull the corpus (writes to `data/corpus/raw/`, gitignored — regenerate
-rather than commit):
+A pulled corpus is already committed under `data/corpus/raw/` so the app
+works out of the box. Re-pull for fresher data (writes over the committed
+files — re-commit if you want the deployed app to reflect it):
 
 ```bash
 python -m app.core.ingestion
@@ -78,6 +79,36 @@ Then launch the chat UI:
 ```bash
 ./run.sh
 ```
+
+## Deploy (Streamlit Community Cloud)
+
+The repo is deploy-ready as-is — `runtime.txt` pins the Python version,
+`requirements.txt` has every dependency, and the corpus is committed so
+the deployed app doesn't need to run live ingestion.
+
+1. Go to [share.streamlit.io](https://share.streamlit.io) and sign in
+   with GitHub.
+2. **New app** → pick this repo → branch `main` → main file path
+   `app/Home.py`.
+3. Before (or after) the first deploy, open **Settings → Secrets** on the
+   app and add:
+   ```toml
+   ANTHROPIC_API_KEY = "sk-ant-..."
+   ```
+   (`GITHUB_TOKEN` isn't needed at runtime — the app only reads the
+   already-committed corpus, it doesn't re-ingest.)
+4. Deploy. First load builds the vector + graph indices in memory
+   (~15-20s, same as running locally) via `st.cache_resource`, then every
+   query after that is fast.
+
+Embeddings (`all-MiniLM-L6-v2`) and the reranker
+(`cross-encoder/ms-marco-MiniLM-L-6-v2`) both run locally inside the
+deployed app — no extra API key needed for those — but they, plus
+`torch`/`chromadb`/`langchain`, make for a heavier dependency footprint
+than a typical Streamlit demo. If the free tier's memory limit becomes a
+problem, the fix is swapping `EMBEDDING_MODEL` in `app/common/config.py`
+back to a hosted (Nebius) embedding model rather than trying to shrink
+the local one further.
 
 ## Project structure
 

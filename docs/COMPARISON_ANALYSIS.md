@@ -13,9 +13,9 @@ way, so the comparison is apples-to-apples:
 
 ![Architecture diagram](assets/architecture.png)
 
-- **Corpus:** 200 real records (100 merged PRs + 100 issues/RFCs) pulled
+- **Corpus:** 1000 real records (500 merged PRs + 500 issues/RFCs) pulled
   live from `langchain-ai/langchain` via the GitHub API — not synthetic.
-- **Graph:** 324 nodes (contributor, PR, issue, module, skill), well past
+- **Graph:** 1472 nodes (contributor, PR, issue, module, skill), well past
   the 20-node minimum.
 - **Each arm applies its own refusal rule**, independently: vector
   refuses when its reranked confidence score falls below threshold;
@@ -37,17 +37,25 @@ way, so the comparison is apples-to-apples:
 queries run                              10           10
 answered                                   5            2
 refused                                    5            8
-mean faithfulness                      0.990        0.985
-mean relevance                         0.640        0.950
+mean faithfulness                      0.984        0.960
+mean relevance                         0.620        0.875
 refusal-test accuracy                  1.000        1.000
-mean latency (s)                       4.285        1.978
-p95 latency (s)                       11.103       17.241
+mean latency (s)                       5.481        4.806
+p95 latency (s)                       15.193       45.738
 ```
 
-**6 of the 10 queries get a real answer from at least one arm.** The
-other 4 either correctly refuse (2 refusal-test queries, by design) or
-expose a specific, documented limitation rather than a general failure
-(see `docs/EVAL_RESULTS.md` findings 2, 3, 6).
+**6 of the 10 queries get a real answer from at least one arm** — the
+same 6 as at the 200-record corpus size this comparison was first run
+at. **This pattern held completely stable across a 5x corpus scale-up**
+(200 → 1000 records): the exact same queries answer vs. refuse on both
+arms, which is real evidence the result isn't a corpus-size coincidence.
+The other 4 unanswered queries either correctly refuse (2 refusal-test
+queries, by design) or expose a specific, documented limitation rather
+than a general failure (see `docs/EVAL_RESULTS.md` findings 2, 3, 6).
+Graph's p95 latency (45.7s) reflects a genuinely large subgraph at this
+scale (query 3's module now spans 34 PRs, ~51K characters of context) —
+slower, not broken; see `docs/EVAL_RESULTS.md` finding 8 for a related
+bug this triggered and how it was fixed.
 
 ## Side-by-side per query
 
@@ -116,7 +124,9 @@ architecture uniformly beating the other:
 - **Neither hallucinates** when the corpus genuinely doesn't cover a
   question — refusal-test accuracy is 100% on both arms.
 
-The two remaining open items (the graph arm's literal-only entity
-matching, and the "unknown" entity-collapse problem that's real but
-currently invisible to this eval's probe) are documented, not hidden, in
+Three items remain genuinely open — the graph arm's literal-only entity
+matching, the "unknown" entity-collapse problem that's real but currently
+invisible to this eval's probe, and generation's reliance on a static
+token budget for a subgraph size that scales with the corpus (the current
+fix is headroom, not a structural cap) — all documented, not hidden, in
 `docs/EVAL_RESULTS.md`.

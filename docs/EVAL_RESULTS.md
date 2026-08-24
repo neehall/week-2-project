@@ -1,7 +1,7 @@
 # 10-Query Comparison — Results & Write-up
 
-Run against a real 200-record corpus (100 merged PRs + 100 issues/RFCs,
-most-recently-updated `langchain-ai/langchain` activity as of 2026-08-21 —
+Run against a real 1000-record corpus (500 merged PRs + 500 issues/RFCs,
+most-recently-updated `langchain-ai/langchain` activity as of 2026-08-24 —
 pulled incrementally, see "Corpus" below) via
 `app.core.evaluation.run_comparison()`. Raw output: `data/eval/results.json`.
 Query set: `data/eval/test_queries.json` (each entry's `note` field explains
@@ -31,16 +31,18 @@ flowchart TD
     style GEN fill:#e0f0e8,stroke:#2b8f5a
 ```
 
-**This is the fourth and final pass.** The first pass (10-query set
-written before any corpus existed) produced 20/20 refusals. The second
-pass (queries rewritten against real content) produced real signal but
-flagged two "open items" as needing more investigation. The third pass
-dug into both, found their actual root causes, and fixed them. This
-fourth pass adds a "skill" node type (closing a gap against the original
-project brief), catches and fixes a regression that change introduced,
-and reports the final numbers below. A comparison-focused summary of
-this data lives in `docs/COMPARISON_ANALYSIS.md`; this document is the
-full investigation log.
+**This is the fifth and final pass, and the first at the full 1000-record
+scale.** The first pass (10-query set written before any corpus existed)
+produced 20/20 refusals. The second pass (queries rewritten against real
+content) produced real signal but flagged two "open items." The third
+pass dug into both, found their actual root causes, and fixed them. The
+fourth pass added a "skill" node type (closing a gap against the original
+project brief) and caught/fixed a regression that change introduced — all
+at 200 records. This fifth pass scales the corpus 5x to 1000 records,
+which surfaced two more real, corpus-size-dependent bugs (findings 7 and
+8) before landing on the final numbers below. A comparison-focused
+summary of this data lives in `docs/COMPARISON_ANALYSIS.md`; this
+document is the full investigation log.
 
 ## Observability KPIs
 
@@ -50,36 +52,37 @@ full investigation log.
 queries run                              10           10
 answered                                    5            2
 refused                                     5            8
-mean faithfulness                       0.990        0.985
-mean relevance                          0.640        0.950
+mean faithfulness                       0.984        0.960
+mean relevance                          0.620        0.875
 refusal-test accuracy                   1.000        1.000
-mean latency (s)                        4.285        1.978
-p95 latency (s)                        11.103       17.241
+mean latency (s)                        5.481        4.806
+p95 latency (s)                        15.193       45.738
 ```
 
 (`app.core.evaluation.print_kpi_summary()` — called automatically at the
 end of every `run_comparison()` — produces this table for any future run.
 LLM-judge faithfulness/relevance scores vary a few hundredths between
 runs on the same query — expected noise from the judge itself, not a
-pipeline change; which queries answer vs. refuse has been stable across
-every re-run since the chunking fix below.)
+pipeline change. The answered/refused pattern — which specific queries
+each arm answers vs. refuses — has been **completely stable across the
+5x corpus scale-up**, a real robustness signal: exactly the same 5 vector
+queries and 2 graph queries answer at 1000 records as at 200.)
 
-Vector went from 3/10 to 5/10 queries answered after the chunking fix
-below (6/10 unique queries get an answer from at least one arm, since
-graph uniquely answers query 3), faithfulness held (didn't drop from
-answering more), and refusal-test accuracy is perfect on both arms in
-this final run.
+Graph's p95 latency (45.7s) is real and expected, not a bug — query 3's
+subgraph at this corpus size runs 34 agents-module PRs deep, ~51K
+characters of context, which takes longer to generate over. See finding
+8 for why that size was dangerous before a fix, not just slow.
 
 ## Per-query result
 
 | # | Type | Expected | Vector | Graph | What happened |
 |---|---|---|---|---|---|
-| 1 | single_hop_factual | tie | **answered** (1.00/0.20) | **answered** (1.00/1.00) | Now a genuine tie, as originally expected — see "PR numbers weren't embedded" below. |
-| 2 | multi_hop_relational | graph | **answered** (0.97/0.50) | refused | Flipped from expected — the graph arm's entity matcher needs a query to *name* the PR, not describe it. |
-| 3 | aggregation_list | graph | refused | **answered** (0.97/0.90) | Matches expectation — graph traversal is the natural fit. |
-| 4 | semantic_exploratory | vector | **answered** (0.98/1.00) | refused | Matches expectation cleanly. |
-| 5 | exact_match_lexical | vector_hybrid | **answered** (1.00/0.90) | refused | Fixed — was refusing on both arms; see "PR numbers weren't embedded" below. |
-| 6 | decision_provenance | graph | **answered** (1.00/0.60) | refused | Flipped, same root cause as #2. |
+| 1 | single_hop_factual | tie | **answered** (1.00/0.30) | **answered** (1.00/1.00) | Genuine tie, as originally expected — see "PR numbers weren't embedded" below. |
+| 2 | multi_hop_relational | graph | **answered** (1.00/0.40) | refused | Flipped from expected — the graph arm's entity matcher needs a query to *name* the PR, not describe it. |
+| 3 | aggregation_list | graph | refused | **answered** (0.92/0.75) | Matches expectation — graph traversal is the natural fit, though see finding 8 for a real bug this query triggered at scale. |
+| 4 | semantic_exploratory | vector | **answered** (0.97/0.95) | refused | Matches expectation cleanly. |
+| 5 | exact_match_lexical | vector_hybrid | **answered** (0.95/0.90) | refused | Fixed — was refusing on both arms; see "PR numbers weren't embedded" below. |
+| 6 | decision_provenance | graph | **answered** (1.00/0.55) | refused | Flipped, same root cause as #2. |
 | 7 | ambiguous_entity | stress_test | refused | refused | Didn't test what it was designed to — see "Ambiguous entity" below. |
 | 8 | cross_document_synthesis | tie | refused | refused | Both correctly refuse but for different reasons (aggregation phrasing vs. no label/tag entity type). |
 | 9 | out_of_corpus | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works (see finding 6 for a regression that briefly broke this on the graph arm, caught before being reported here). |
@@ -239,6 +242,48 @@ tools-traversal query used to validate the skill feature still works;
 re-ran the full 10-query comparison to confirm no other regression — the
 numbers in this document are from that clean run.
 
+### 7. Chroma's max batch size, hit for the first time at 1000 records
+
+Scaling the corpus from 200 to 1000 records (8105 chunks, up from ~1150)
+made `HybridVectorStore.add_chunks()` crash outright:
+`chromadb.errors.InternalError: ValueError: Batch size of 8105 is greater
+than max batch size of 5461`. Chroma enforces a hard per-`add()` call
+limit (tied to the underlying sqlite parameter count) that simply never
+mattered at any smaller corpus size tested this session — a real example
+of a bug that's invisible until a specific scale threshold is crossed, no
+amount of testing at 40/100/200 records would have found it. Fixed by
+batching `add()` calls at 2000 chunks each (`app/core/vector_store.py`)
+rather than one call for the whole corpus; re-verified the vector store
+builds successfully at the full 1000-record scale.
+
+### 8. Generation went from "cut off mid-word" to "completely empty" at 5x corpus scale
+
+The `GENERATION_MAX_TOKENS` fix in finding 4 (200 → cut off mid-word →
+raised to 4096) held at 200 records but broke again, worse, at 1000:
+query 3's answer came back **entirely empty** (0 characters) rather than
+truncated. Traced directly: the agents-module subgraph at this corpus
+size is ~51K characters / ~24.5K input tokens (up from a much smaller
+subgraph at 200 records, since the module now has 34 PRs instead of 6),
+and Claude Opus 5's adaptive thinking consumed the *entire* 4096-token
+output budget as hidden reasoning — `stop_reason: "max_tokens"`,
+`thinking_tokens: 4096`, zero visible text. Same underlying failure mode
+as finding 5's `_judge()` bug (thinking sharing the budget with the
+visible output), now hitting `generate_answer()` itself because subgraph
+size scales with corpus size in a way a fixed `chunk_id`-based token
+budget doesn't.
+
+Fixed two ways: raised `GENERATION_MAX_TOKENS` to 8192 (real headroom,
+not just enough to have worked at the one corpus size tested), and added
+`output_config={"effort": "medium"}` to `generate_answer()`'s API call so
+less of the budget goes to unbounded reasoning. Re-verified against the
+exact failing query — 8013 characters, completes naturally, and even
+self-limits appropriately ("If you need only those with *merged code* in
+the agents module, that would be a narrower subset..."). This is a
+stopgap, not a permanent fix: subgraph size will keep growing with corpus
+size and will eventually outgrow any static token budget again. The real
+fix — capping or summarizing large subgraphs before they reach generation
+— is not done here.
+
 ## Corpus
 
 Pulled incrementally, checking GitHub rate limit and query/corpus term
@@ -249,14 +294,23 @@ coverage after each step, per explicit instruction this session:
 | 1 | 20 / 20 | 40 | 123s | comfortable |
 | 2 | 50 / 50 | 100 | 123s | comfortable |
 | 3 | 100 / 100 | 200 | 251s | comfortable |
+| 4 | 500 / 500 | 1000 | 428s | comfortable (4981/5000 remaining beforehand) |
 
 Coverage plateaued at step 3 for terms tied to fabricated specifics (a
 literal PR number, a contributor named "Alex", an invented error code) —
 confirming further scaling wouldn't help those, which is why the query set
-was rewritten instead of scaled further. `config.py`'s `PR_LIMIT`/
-`ISSUE_LIMIT` defaults remain 20/20 for fast dev iteration; this eval run
-used a one-off larger pull via env override (`PR_LIMIT=100 ISSUE_LIMIT=100
-python -m app.core.ingestion`), not a change to those defaults.
+was rewritten instead of scaled further at that point. Step 4 was a
+later, separate 5x scale-up specifically to stress-test the pipeline at a
+larger size — it surfaced findings 7 and 8 above, both real corpus-size-
+dependent bugs, and confirmed the previously-rewritten query set and its
+answered/refused pattern hold unchanged at 5x scale (see the KPI section).
+`config.py`'s `PR_LIMIT`/`ISSUE_LIMIT` defaults remain 20/20 for fast dev
+iteration; every larger pull in this document used a one-off env override
+(e.g. `PR_LIMIT=500 ISSUE_LIMIT=500 python -m app.core.ingestion`), not a
+change to those defaults. Unlike the earlier 200-record corpus, this
+1000-record corpus **is committed to the repo** (`data/corpus/raw/`) —
+needed for the Streamlit Community Cloud deploy path, which can't
+practically run live ingestion on every cold start.
 
 ## Query set
 
@@ -287,7 +341,13 @@ comparison shows real, stable signal:
 - **The refusal path works** — both correct-refusal tests (9, 10) pass
   on both arms, across every pass of this eval, including the pass where
   the vector threshold was under real stress-testing.
-- **Two items remain genuinely open** (not fixed in this pass, unlike
-  the chunking/generation bugs above): the graph arm's literal-only
-  entity matching (finding 2), and the "unknown" entity-collapse problem
-  that's real but currently invisible to this eval's probe (finding 3).
+- **The pattern is stable at 5x corpus scale** — exactly the same
+  queries answer vs. refuse at 1000 records as at 200, which is real
+  evidence this isn't a corpus-size coincidence.
+- **Three items remain genuinely open** (not fixed in this pass, unlike
+  the chunking/generation/batching bugs above): the graph arm's
+  literal-only entity matching (finding 2), the "unknown" entity-collapse
+  problem that's real but currently invisible to this eval's probe
+  (finding 3), and generation's reliance on a static token budget for a
+  subgraph size that scales with the corpus (finding 8) — the current fix
+  is headroom, not a structural cap.

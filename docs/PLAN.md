@@ -63,11 +63,12 @@ empty subgraph. If both arms are below threshold, refuse outright.
 
 ## The 10-query comparison set
 
-Grounded in the real ~200-record corpus (`data/eval/test_queries.json` —
-each entry's `note` field explains what it's grounded in). An earlier
-version of this table was written as generic templates before any corpus
-existed; 9 of 10 turned out to have zero occurrences once real data was
-pulled (see docs/EVAL_RESULTS.md for that finding). Queries 1-7 below were
+Grounded in the real corpus (`data/eval/test_queries.json` — each entry's
+`note` field explains what it's grounded in), first at 200 records and
+re-verified unchanged after a later scale-up to 1000. An earlier version
+of this table was written as generic templates before any corpus existed;
+9 of 10 turned out to have zero occurrences once real data was pulled
+(see docs/EVAL_RESULTS.md for that finding). Queries 1-7 below were
 rewritten against actual corpus content; 8-10 already worked as written.
 See **docs/COMPARISON_ANALYSIS.md** for the head-to-head results and
 analysis, or **docs/EVAL_RESULTS.md** for the full investigation log.

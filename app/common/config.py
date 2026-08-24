@@ -84,12 +84,22 @@ GRAPH_MAX_HOPS = 2
 # original Nebius-hosted default since NEBIUS_API_KEY isn't set; needs
 # ANTHROPIC_API_KEY in .env instead. See docs/PLAN.md's generation section.
 # 1024 was too small once the corpus grew to 200 records — an aggregation
-# answer over a large subgraph (e.g. "list every contributor to module X")
-# got cut off mid-word. Bumped with headroom; still comfortably under the
-# non-streaming SDK's request-timeout risk zone (see the claude-api skill's
-# max_tokens guidance — streaming is only needed much higher than this).
+# answer over a large subgraph got cut off mid-word. Fixed by bumping to
+# 4096 at the time — but that broke again at 1000 records: a subgraph can
+# now run 50K+ chars (e.g. "list every contributor to module X" against a
+# module with 30+ PRs), and Claude Opus 5's adaptive thinking consumed the
+# entire 4096-token budget on hidden reasoning, leaving stop_reason
+# "max_tokens" and zero visible output — worse than truncation, a fully
+# empty answer. Bumped again with real headroom, and generation.py caps
+# reasoning effort so more of the budget goes to the visible answer
+# instead of unbounded thinking (same fix already applied to
+# evaluation._judge() for the same underlying failure mode). This is a
+# stopgap, not a permanent fix — subgraph size scales with corpus size and
+# will eventually outgrow any static token budget; the real fix is
+# capping/summarizing large subgraphs before they reach generation
+# (not done here — see docs/EVAL_RESULTS.md).
 GENERATION_MODEL = "claude-opus-5"
-GENERATION_MAX_TOKENS = 4096
+GENERATION_MAX_TOKENS = 8192
 
 # --- Confidence gate --------------------------------------------------------
 

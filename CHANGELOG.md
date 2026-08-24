@@ -6,6 +6,54 @@ are the living design docs; this file tracks what changed and when.
 
 ## [Unreleased]
 
+### Changed
+- Corpus scaled 5x, from 200 to 1000 records (500 merged PRs + 500
+  issues/RFCs, ~15 min pull) — committed to the repo, replacing the
+  previous 200-record snapshot. All specific PR/issue numbers the test
+  queries reference (39832, 39602, 39538, 39325, 39324) were verified
+  still present before trusting a re-run — GitHub's "most-recently-
+  updated" ordering means a larger pull is a strict superset only if
+  nothing in the already-pulled range was updated in between, which was
+  checked directly rather than assumed. Graph grew to 1472 nodes (up
+  from 324); vector store to 8105 chunks (up from ~1157).
+
+### Fixed
+- `app/core/vector_store.py` — Chroma enforces a hard per-`add()` call
+  batch size limit (observed: 5461), invisible at every corpus size
+  tested up to 200 records (1157 chunks) and a hard crash at 1000
+  (8105 chunks): `chromadb.errors.InternalError: Batch size ... greater
+  than max batch size`. Fixed by batching inserts at 2000 chunks per
+  call instead of one call for the whole corpus.
+- `app/common/config.py` / `app/core/generation.py` — the
+  `GENERATION_MAX_TOKENS` fix from the 200-record pass (1024 -> 4096,
+  for a truncated-mid-word answer) broke again, worse, at 1000 records:
+  the same query's answer came back **completely empty**. Root cause:
+  the agents module now spans 34 PRs (up from 6), producing a ~51K-char
+  / ~24.5K-input-token subgraph, and Claude Opus 5's adaptive thinking
+  consumed the entire 4096-token output budget as hidden reasoning
+  before writing any visible text (`stop_reason: "max_tokens"`,
+  `thinking_tokens: 4096`) — the same failure mode already fixed once
+  in `evaluation._judge()`, now hit in real generation because subgraph
+  size scales with corpus size in a way a fixed budget doesn't. Fixed
+  by raising `GENERATION_MAX_TOKENS` to 8192 and capping
+  `output_config={"effort": "medium"}` on the generation call. Verified
+  against the exact failing query (8013 chars, completes naturally)
+  before re-running the full comparison — the answered/refused pattern
+  held completely unchanged from the 200-record corpus, real evidence
+  the earlier result wasn't a corpus-size coincidence. This is a
+  stopgap (more headroom), not a structural fix — subgraph size will
+  keep growing with the corpus and can outgrow any static budget again;
+  documented as an open item in `docs/EVAL_RESULTS.md`.
+- The `ANTHROPIC_API_KEY` in use since earlier in the session started
+  returning `401 Invalid API key` directly from Anthropic's servers
+  mid-run (revoked/expired on their end, not a bug here) — replaced
+  with a newly-generated key, verified with a direct API call before
+  re-running the comparison.
+- `docs/EVAL_RESULTS.md`, `docs/COMPARISON_ANALYSIS.md` (+ `.docx`),
+  `docs/PROJECT_WRITEUP.md` (+ `.docx`), `docs/PLAN.md` — all updated
+  with final numbers from the 1000-record corpus and the two new
+  findings above.
+
 ### Added
 - `docs/COMPARISON_ANALYSIS.md` / `docs/COMPARISON_ANALYSIS.docx` — a
   focused, presentation-oriented GraphRAG-vs-vector-RAG comparison

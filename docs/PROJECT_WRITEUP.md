@@ -61,13 +61,14 @@ aren't mangled.
 |---|---|---|---|---|---|
 | 1 | 20 | 20 | 40 | 123s | Initial dev-scale pull |
 | 2 | 50 | 50 | 100 | 123s | First scale-up, checked GitHub rate limit + query-term coverage |
-| 3 | 100 | 100 | 200 | 251s | Final size — coverage of eval-query terms plateaued here for anything tied to fabricated specifics, confirming further scaling wouldn't help those |
+| 3 | 100 | 100 | 200 | 251s | Coverage of eval-query terms plateaued here for anything tied to fabricated specifics, confirming further scaling wouldn't help those |
+| 4 | 500 | 500 | 1000 | 428s | A later, separate 5x scale-up to stress-test the pipeline at a larger size — final corpus, committed to the repo |
 
-At 200 records, chunking (~250-token chunks, sized for the 384-dim local
-embedding model) produced ~1150-1170 chunks, and graph construction
-produced 324 nodes (well past the 20-node minimum) across five node
-types: contributor, PR, issue, module, and **skill** (tools/technologies
-— see the graph schema note below).
+At the current 1000-record scale, chunking (~250-token chunks, sized for
+the 384-dim local embedding model) produces 8105 chunks, and graph
+construction produces 1472 nodes (well past the 20-node minimum) across
+five node types: contributor, PR, issue, module, and **skill**
+(tools/technologies — see the graph schema note below).
 
 **Known limitation, stated explicitly rather than glossed over:** this is
 a one-time snapshot of the most-recently-updated slice of a large,
@@ -251,6 +252,37 @@ The notable iterations:
    still works; re-ran the full 10-query comparison once more to confirm
    no other regression before reporting final numbers.
 
+10. **Scaling the corpus 5x (200 → 1000 records) surfaced two more real
+    bugs that simply didn't exist at any smaller size tested.** First:
+    the vector store crashed outright —
+    `chromadb.errors.InternalError: Batch size of 8105 is greater than
+    max batch size of 5461` — because Chroma enforces a hard per-`add()`
+    call limit that only 1000 records' worth of chunks (8105) actually
+    crossed; every earlier size (up to 1157 chunks at 200 records) was
+    comfortably under it. Fixed by batching the insert calls at 2000
+    chunks each instead of one call for the whole corpus.
+
+11. **Fixing the batching bug immediately surfaced a second, more subtle
+    one: the earlier `GENERATION_MAX_TOKENS` fix (iteration 6) held at
+    200 records but broke again, worse, at 1000.** The same query
+    ("list every contributor to the agents module") went from "cut off
+    mid-word" to **completely empty** — the module now spans 34 PRs
+    instead of 6, so its subgraph is ~51K characters / ~24.5K input
+    tokens, and Claude Opus 5's adaptive thinking consumed the *entire*
+    4096-token output budget as hidden reasoning before writing any
+    visible text (`stop_reason: "max_tokens"`, `thinking_tokens: 4096`).
+    Same underlying failure mode as the eval-judge bug (iteration 5) —
+    thinking sharing the budget with the visible output — now hitting
+    real generation because subgraph size scales with corpus size in a
+    way a fixed token budget doesn't. Fixed by raising the budget to
+    8192 (real headroom, not just enough for the one size tested) and
+    capping reasoning effort to `"medium"` so less of the budget goes to
+    unbounded thinking. Re-verified against the exact failing query
+    (8013 characters, completes naturally) before re-running the full
+    comparison — the answered/refused pattern held completely unchanged
+    from the 200-record corpus, real evidence the earlier result wasn't
+    a corpus-size coincidence.
+
 ## 5. Learnings / Observations
 
 - **A system that never gets run end-to-end will hide bugs that only
@@ -316,3 +348,15 @@ The notable iterations:
   happened to route through the four types that existed. A deliberate
   line-by-line check against the brief's literal text — not just "does
   the demo work" — is what surfaced it.
+
+- **"Works at this size" and "works" are different claims, and testing
+  at only one scale can't tell them apart.** Two real bugs (a hard
+  Chroma batch limit, and a generation token budget that quietly
+  depended on subgraph size) existed in code that had already passed
+  every check at 40, 100, and 200 records — they were only ever a
+  function of corpus size, not correctness at any size tested. The fix
+  wasn't "test more at 200 records," it was deliberately scaling 5x and
+  re-running the exact same checks, which is what actually found them.
+  The payoff of doing that: the query-level answered/refused pattern
+  itself held perfectly stable across the scale-up — genuine evidence
+  the comparison's conclusions aren't a small-corpus artifact.

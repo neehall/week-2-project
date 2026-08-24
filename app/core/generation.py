@@ -56,6 +56,13 @@ def generate_answer(
     response = client.messages.create(
         model=model,
         max_tokens=config.GENERATION_MAX_TOKENS,
+        # Claude Opus 5's adaptive thinking shares this token budget with
+        # the visible answer. On a large graph subgraph (a big module's
+        # worth of PRs/edges) thinking alone consumed the entire budget,
+        # leaving stop_reason "max_tokens" and zero visible text — capping
+        # effort keeps more of the budget going to the actual answer. See
+        # config.GENERATION_MAX_TOKENS's comment for the full story.
+        output_config={"effort": "medium"},
         system=SYSTEM_PROMPT,
         messages=[
             {

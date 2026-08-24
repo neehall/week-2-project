@@ -72,7 +72,19 @@ class HybridVectorStore:
             }
             for c in chunks
         ]
-        self._collection.add(ids=ids, documents=documents, metadatas=metadatas)
+        # Chroma enforces a max batch size per add() call (observed: 5461,
+        # tied to the underlying sqlite parameter limit) — silent at small
+        # corpus sizes, a hard InternalError once chunk count crosses it
+        # (hit at 1000 records / 8105 chunks). Batch defensively rather
+        # than assume the corpus stays small.
+        batch_size = 2000
+        for start in range(0, len(ids), batch_size):
+            end = start + batch_size
+            self._collection.add(
+                ids=ids[start:end],
+                documents=documents[start:end],
+                metadatas=metadatas[start:end],
+            )
 
         for c in chunks:
             self.chunks_by_id[c.chunk_id] = c

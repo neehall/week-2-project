@@ -128,8 +128,9 @@ app/
     confidence_gate.py                   # decides refuse vs. generate, per arm
     generation.py                          # LLM call (Claude), grounded + cited
     evaluation.py                            # faithfulness / relevance / refusal-rate / latency scoring + KPI summary
+    checkpoints.py                             # fast, cheap per-stage sanity checks; gates run_comparison()
 data/
-  corpus/raw/               # pulled GitHub data (gitignored, regenerate via ingestion.py)
+  corpus/raw/               # pulled GitHub data (committed, re-pull via ingestion.py for fresher data)
   eval/
     test_queries.json         # the 10-query comparison set (incl. 2 refusal-test queries)
     results.json               # latest run_comparison() output
@@ -151,6 +152,7 @@ screenshots/                # the chat UI, working
 - [x] Confidence gate — refuse vs. generate, designed before the happy path
 - [x] LangGraph orchestration — `parse_query -> {retrieve_vector, retrieve_graph} -> confidence_gate -> {generate, refuse}`
 - [x] 10-query eval harness + comparison report (`docs/COMPARISON_ANALYSIS.md`, `docs/EVAL_RESULTS.md`)
+- [x] Checkpoint evals per pipeline stage (`app/core/checkpoints.py`) — gates the full comparison, aborts before spending API calls if a stage is broken
 
 ## Data provenance
 

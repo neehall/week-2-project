@@ -31,6 +31,16 @@ flowchart TD
 A shared confidence gate — not the LLM — decides whether to answer or
 refuse, so weak retrieval never reaches generation.
 
+**Checkpoint evals** (`app/core/checkpoints.py`) sit in front of the
+expensive full 10-query LLM-judged comparison: a fast, cheap sanity
+check per pipeline stage (ingestion, chunking, vector store, graph
+store, both retrieval arms, confidence gate, generation), each modeled
+on a real bug found while building this project (see docs/EVAL_RESULTS.md).
+`evaluation.run_comparison()` runs them first and aborts before spending
+any Claude API calls if one fails — most checks are instant and make no
+API calls at all; only the generation checkpoint makes one real call.
+Run standalone: `python -m app.core.checkpoints`.
+
 ## Chunk size ↔ embedding capacity
 
 | Embedding model | Dimensions | Recommended chunk size |

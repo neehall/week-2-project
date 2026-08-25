@@ -156,7 +156,14 @@ def _run_graph_arm(query_text: str, graph_store) -> tuple[QueryScore, str]:
     )
 
 
-def run_comparison(queries: list[dict], vector_store, graph_store) -> list[QueryScore]:
+def run_comparison(
+    queries: list[dict],
+    vector_store,
+    graph_store,
+    records: list | None = None,
+    chunks: list | None = None,
+    skip_checkpoints: bool = False,
+) -> list[QueryScore]:
     """Run every query through both arms independently, score, and time each.
 
     Each arm applies its own refusal rule (vector: top_score below
@@ -164,7 +171,30 @@ def run_comparison(queries: list[dict], vector_store, graph_store) -> list[Query
     combined OR — the point of this comparison is to see each arm's
     refusal behavior on its own, not the merged app-facing decision
     app/graph_flow.py makes.
+
+    Runs app.core.checkpoints.run_all() first (unless skip_checkpoints)
+    and aborts before spending any Claude API calls if a checkpoint
+    fails — every prior full run this session that turned out to be
+    garbage was garbage because of a bug a checkpoint would have caught
+    in seconds, not minutes. Pass `records`/`chunks` for full coverage
+    (ingestion/chunking checks included); without them, checkpoints still
+    run for every stage downstream of the already-built stores.
     """
+    if not skip_checkpoints:
+        from app.core import checkpoints
+
+        checkpoint_results = checkpoints.run_all(
+            vector_store, graph_store, records=records, chunks=chunks
+        )
+        checkpoints.print_checkpoint_report(checkpoint_results)
+        failed = [r for r in checkpoint_results if not r.passed]
+        if failed:
+            raise RuntimeError(
+                f"{len(failed)} checkpoint(s) failed — aborting before the expensive "
+                f"full comparison. See the report above. Pass skip_checkpoints=True "
+                f"to bypass (not recommended)."
+            )
+
     scores: list[QueryScore] = []
     for q in queries:
         query_text = q["query"]

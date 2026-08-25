@@ -22,9 +22,11 @@ class RetrievalResult:
     arm: str = "graph"
 
 
-def _match_entities(query: str, store) -> set[str]:
+def match_entities(query: str, store) -> set[str]:
     """Extract candidate entity names from the query and resolve them
-    against nodes already in the graph.
+    against nodes already in the graph. Public — also used by
+    checkpoints.py to probe entity matching in isolation, without a full
+    retrieve() traversal.
     """
     matched: set[str] = set()
     query_lower = query.lower()
@@ -82,7 +84,7 @@ def _serialize_subgraph(subgraph) -> str:
 
 def retrieve(query: str, store, max_hops: int = config.GRAPH_MAX_HOPS) -> RetrievalResult:
     """Entity-match the query against graph nodes, traverse, serialize."""
-    matched = _match_entities(query, store)
+    matched = match_entities(query, store)
     if not matched:
         return RetrievalResult(subgraph_text="", matched_nodes=0)
 

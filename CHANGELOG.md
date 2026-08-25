@@ -6,6 +6,41 @@ are the living design docs; this file tracks what changed and when.
 
 ## [Unreleased]
 
+### Added
+- `app/core/checkpoints.py` — fast, cheap sanity checks at every
+  critical pipeline stage (ingestion, chunking, vector store build,
+  graph store build, both retrieval arms, confidence gate, generation),
+  each modeled directly on a real bug found this session (see
+  docs/EVAL_RESULTS.md's findings) rather than invented in the
+  abstract: chunking checks for the missing self-identifying header
+  (finding 1), vector store checks the insert succeeded at full batch
+  size (finding 7), graph store runs a skill-vocabulary false-positive
+  probe (finding 6), generation runs one real call against the known-
+  worst-case subgraph and checks for the empty-answer/thinking-exhausts-
+  budget failure mode (finding 8). Canary queries are reused directly
+  from `data/eval/test_queries.json` — no new fixtures invented.
+  `evaluation.run_comparison()` now runs every checkpoint first and
+  aborts (`RuntimeError`) before spending any Claude API calls if one
+  fails, rather than running the full ~20-call LLM-judged comparison
+  against a pipeline already known to be broken. Run standalone:
+  `python -m app.core.checkpoints` (exits non-zero on any failure).
+  `retrieval_graph._match_entities()` renamed to `match_entities()`
+  (public) so checkpoints.py can probe entity matching in isolation.
+
+  Verified three ways: (1) ran standalone against the real 1000-record
+  corpus — 7/8 passed cleanly, the 8th (generation) correctly reported
+  an invalid API key as a failed checkpoint with a clear message instead
+  of crashing the whole run (a real robustness gap caught and fixed
+  during this same verification pass — checks now run inside a
+  try/except wrapper so one check's exception can't hide the rest of
+  the report); (2) deliberately reproduced two already-fixed bugs in
+  isolation (a chunk missing its header; `"langchain"` reintroduced into
+  `KNOWN_SKILLS`) and confirmed the corresponding checkpoint catches
+  each one, proving they check real conditions, not placeholders;
+  (3) confirmed `run_comparison()` aborts immediately with a clear
+  message when a checkpoint fails, rather than proceeding to burn API
+  budget on a comparison that was always going to fail.
+
 ### Changed
 - Corpus scaled 5x, from 200 to 1000 records (500 merged PRs + 500
   issues/RFCs, ~15 min pull) — committed to the repo, replacing the

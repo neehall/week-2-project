@@ -7,6 +7,46 @@ are the living design docs; this file tracks what changed and when.
 ## [Unreleased]
 
 ### Added
+- `app/pages/1_Comparison.py` — a second Streamlit page (multipage
+  sidebar nav, alongside `Home.py`) rendering the GraphRAG vs.
+  vector-RAG KPI table and full per-query breakdown live from
+  `data/eval/results.json`/`test_queries.json`, rather than a static
+  copy of the numbers in the docs. Verified by actually launching the
+  app and screenshotting both pages (headless Chromium) — confirmed the
+  sidebar nav, the 16-query KPI table, and the per-query table all
+  render correctly against the real 1000-record corpus.
+- `data/eval/test_queries.json` — 6 edge-case queries (11-16): empty
+  input, whitespace-only input, a syntactically valid but nonexistent
+  identifier (`PR #99999999`), a prompt-injection attempt, a
+  deliberately oversized multi-clause query, and a unicode/emoji-noised
+  rephrasing of query 1. Each grounded in the real pipeline code (e.g.
+  query 13 targets `retrieval_graph.match_entities()`'s
+  `store.get_node(...) is not None` guard) rather than written as
+  generic edge cases. Re-ran the full comparison at 16 queries — no
+  crashes on any edge case; see `docs/EVAL_RESULTS.md` finding 9.
+- `scripts/run_eval.py` — a small runner (mirrors `checkpoints.py`'s
+  `__main__` block) that builds both stores from the committed corpus,
+  runs `evaluation.run_comparison()` over the full query set, and writes
+  `data/eval/results.json`. Not committed previously — earlier runs were
+  driven ad hoc; added for reproducibility (`PYTHONPATH=. python
+  scripts/run_eval.py`).
+
+### Changed
+- Merged `docs/COMPARISON_ANALYSIS.md` into `docs/PROJECT_WRITEUP.md`
+  (now section 2, "Comparison Results: GraphRAG vs. Vector-RAG
+  Head-to-Head") so the write-up is a single file instead of two;
+  `docs/COMPARISON_ANALYSIS.md`/`.docx` and the duplicate root-level
+  `.docx` exports removed. `docs/EVAL_RESULTS.md` remains the separate
+  full investigation log (raw numbers, root causes, findings) that the
+  merged section summarizes — README, PLAN, SCOPE, DEMO_SCRIPT, and
+  CODE_MAP updated to point at the new location.
+- `docs/EVAL_RESULTS.md` / `docs/PROJECT_WRITEUP.md` — KPI table and
+  per-query results updated for the 16-query run (was 10): vector 6/16
+  answered, graph 4/16 answered, refusal-test accuracy 1.000 on both
+  arms across all 6 refusal-test queries. The original 10 queries'
+  answered/refused pattern is unchanged from the 5-pass, 10-query run.
+
+### Added
 - `app/core/checkpoints.py` — fast, cheap sanity checks at every
   critical pipeline stage (ingestion, chunking, vector store build,
   graph store build, both retrieval arms, confidence gate, generation),

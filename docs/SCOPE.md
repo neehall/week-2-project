@@ -4,7 +4,7 @@
 - Build track: Code-heavy, LangChain + LangGraph
 - Corpus: `langchain-ai/langchain` GitHub repo — contributors, PRs,
   issues/RFCs, and modules, pulled via the GitHub API
-- Results: see `docs/COMPARISON_ANALYSIS.md` for the GraphRAG vs.
+- Results: see `docs/PROJECT_WRITEUP.md` (section 2) for the GraphRAG vs.
   vector-RAG comparison, or `docs/EVAL_RESULTS.md` for the full
   investigation log
 

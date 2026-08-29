@@ -2,14 +2,14 @@
 
 Two retrieval arms — hybrid vector-RAG and GraphRAG — run over the same
 corpus (the LangChain GitHub repo: PRs, issues, RFCs, module docs) and are
-compared head-to-head on the same 10 queries, so the difference between
-"semantic similarity" and "structured relationships" is measured, not just
-asserted.
+compared head-to-head on the same 16 queries (10 original + 6 edge cases),
+so the difference between "semantic similarity" and "structured
+relationships" is measured, not just asserted.
 
 Status: fully implemented and working end-to-end — ingestion, both
 retrieval arms, the confidence gate, generation, the LangGraph state
-machine, and a chat UI. See **[docs/COMPARISON_ANALYSIS.md](docs/COMPARISON_ANALYSIS.md)**
-for the head-to-head comparison summary, or
+machine, and a chat UI. See **[docs/PROJECT_WRITEUP.md](docs/PROJECT_WRITEUP.md)**
+(section 2) for the head-to-head comparison summary, or
 **[docs/EVAL_RESULTS.md](docs/EVAL_RESULTS.md)** for the full
 investigation log (bugs found, root causes, every fix).
 
@@ -82,6 +82,11 @@ Then launch the chat UI:
 ./run.sh
 ```
 
+A second page, **Comparison** (sidebar nav), renders the live GraphRAG vs.
+vector-RAG KPI table and per-query results from `data/eval/results.json` —
+regenerate that file first with `PYTHONPATH=. python scripts/run_eval.py`
+(needs `ANTHROPIC_API_KEY`).
+
 ## Deploy (Streamlit Community Cloud)
 
 The repo is deploy-ready as-is — `runtime.txt` pins the Python version,
@@ -117,6 +122,8 @@ the local one further.
 ```
 app/
   Home.py                  # Streamlit chat UI — wraps the compiled LangGraph flow
+  pages/
+    1_Comparison.py           # Streamlit page: live GraphRAG vs. vector-RAG KPI/per-query view, reads data/eval/results.json
   graph_flow.py             # LangGraph state machine wiring both arms + the confidence gate
   common/
     config.py                 # single source of truth for every tunable (models, limits, thresholds)
@@ -131,17 +138,18 @@ app/
     generation.py                          # LLM call (Claude), grounded + cited
     evaluation.py                            # faithfulness / relevance / refusal-rate / latency scoring + KPI summary
     checkpoints.py                             # fast, cheap per-stage sanity checks; gates run_comparison()
+scripts/
+  run_eval.py                # builds both stores from the committed corpus, runs run_comparison(), writes results.json
 data/
   corpus/raw/               # pulled GitHub data (committed, re-pull via ingestion.py for fresher data)
   eval/
-    test_queries.json         # the 10-query comparison set (incl. 2 refusal-test queries)
+    test_queries.json         # the 16-query comparison set (10 original + 6 edge cases; incl. 6 refusal-test queries)
     results.json               # latest run_comparison() output
 docs/
   PLAN.md                   # full architecture + eval plan (source of truth)
   SCOPE.md                  # corpus choice, primer, and the filled-out framework
-  COMPARISON_ANALYSIS.md    # head-to-head GraphRAG vs. vector-RAG summary (.docx also generated)
   EVAL_RESULTS.md           # the full investigation log — bugs found, root causes, fixes
-  PROJECT_WRITEUP.md        # project overview, dataset, prompts, iterations (.docx also generated)
+  PROJECT_WRITEUP.md        # overview, head-to-head comparison, dataset, prompts, iterations (.docx also generated)
   CODE_MAP.md               # file-by-file index of what each source file does
   DEMO_SCRIPT.md            # a query-by-query demo walkthrough
 screenshots/                # the chat UI, working
@@ -154,7 +162,7 @@ screenshots/                # the chat UI, working
 - [x] GraphRAG arm — entity match + 1-2 hop graph traversal
 - [x] Confidence gate — refuse vs. generate, designed before the happy path
 - [x] LangGraph orchestration — `parse_query -> {retrieve_vector, retrieve_graph} -> confidence_gate -> {generate, refuse}`
-- [x] 10-query eval harness + comparison report (`docs/COMPARISON_ANALYSIS.md`, `docs/EVAL_RESULTS.md`)
+- [x] 16-query eval harness (10 original + 6 edge cases) + comparison report (`docs/PROJECT_WRITEUP.md` section 2, `docs/EVAL_RESULTS.md`)
 - [x] Checkpoint evals per pipeline stage (`app/core/checkpoints.py`) — gates the full comparison, aborts before spending API calls if a stage is broken
 
 ## Data provenance

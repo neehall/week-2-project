@@ -2,7 +2,7 @@
 
 **Project:** Two Arms, One Corpus — hybrid vector-RAG vs. GraphRAG, compared head-to-head
 **Repo:** github.com/neehall/week-2-project
-**Comparison results:** `docs/COMPARISON_ANALYSIS.md` (head-to-head summary) / `docs/EVAL_RESULTS.md` (full investigation log)
+**Full investigation log:** `docs/EVAL_RESULTS.md` (bugs found, root causes, every number's provenance — section 2 below is the presentation-oriented summary of that log)
 
 ## 1. Project Overview
 
@@ -40,7 +40,164 @@ worse than one that says it doesn't know.
 | Generation | Claude (`claude-opus-5`) via the official `anthropic` SDK | Swapped in from the original Nebius-hosted LLM plan, same reason as embeddings |
 | UI | Streamlit | Minimal chat interface wrapping the compiled LangGraph flow |
 
-## 2. Dataset Used
+## 2. Comparison Results: GraphRAG vs. Vector-RAG Head-to-Head
+
+A focused, presentation-oriented summary of how the two retrieval arms
+compare on the same 16 questions (the original 10, plus 6 edge cases added
+in a later pass — see "Query set" note below). For the full investigation
+log — bugs found, root causes, and how each number was arrived at — see
+`docs/EVAL_RESULTS.md`. Raw data: `data/eval/results.json` and
+`data/eval/test_queries.json`; reproducible via `scripts/run_eval.py`.
+
+### Methodology
+
+Every query runs through both arms independently and is scored the same
+way, so the comparison is apples-to-apples:
+
+- **Corpus:** 1000 real records (500 merged PRs + 500 issues/RFCs) pulled
+  live from `langchain-ai/langchain` via the GitHub API — not synthetic.
+- **Graph:** 1472 nodes (contributor, PR, issue, module, skill), well past
+  the 20-node minimum.
+- **Each arm applies its own refusal rule**, independently: vector
+  refuses when its reranked confidence score falls below threshold;
+  graph refuses when no entity in the query matches a graph node. This
+  is deliberately *not* the same as the merged app-facing decision
+  (`app/graph_flow.py`'s `confidence_gate`, which answers if *either* arm
+  is confident) — the point here is to see each arm's own behavior in
+  isolation.
+- **Scoring:** faithfulness (does every claim trace to the retrieved
+  evidence?) and relevance (does the evidence address the question?),
+  both LLM-judged 0.0-1.0; refusal-test accuracy on the six queries
+  specifically designed to require a refusal (2 out-of-corpus/unindexed
+  topics, plus 4 edge-case inputs: empty, whitespace-only, a nonexistent
+  identifier, and a prompt-injection attempt).
+
+### Results
+
+```
+--- Observability KPIs ---           vector        graph
+--------------------------------------------------------
+queries run                              16           16
+answered                                   6            4
+refused                                   10           12
+mean faithfulness                      0.982        0.968
+mean relevance                         0.538        0.812
+refusal-test accuracy                  1.000        1.000
+mean latency (s)                       2.914        8.292
+p95 latency (s)                       11.743       51.936
+```
+
+**6 of the 16 queries get a real answer from at least one arm** — the same
+6 original queries that have answered at every corpus size tested (200 and
+1000 records) and again here alongside 6 new edge-case queries. The 6
+edge-case additions (11-16) didn't change any of the original 10 results:
+4 (empty input, whitespace-only, a fake-but-valid identifier, a
+prompt-injection attempt) correctly refuse on both arms with no crashes;
+1 (an intentionally oversized multi-clause query) is answered by graph
+and refused by vector; 1 (a unicode/emoji-noised rephrasing of query 1)
+is answered correctly by both. See `docs/EVAL_RESULTS.md` finding 9 for
+the detail on each.
+
+### Side-by-side per query
+
+| # | Question type | Question | Vector | Graph | Winner |
+|---|---|---|---|---|---|
+| 1 | Single-hop factual | Who authored PR #39832? | ✅ answered | ✅ answered | **Tie** |
+| 2 | Multi-hop relational | Who reviewed the PR that resolved postponed annotations in StructuredTool, and what module does it touch? | ✅ answered | ❌ refused | **Vector** |
+| 3 | Aggregation / list | List every contributor to the agents module. | ❌ refused | ✅ answered | **Graph** |
+| 4 | Semantic / exploratory | Why do shell subprocess resources leak when a run is interrupted mid-session? | ✅ answered | ❌ refused | **Vector** |
+| 5 | Exact-match / lexical | Which PR references StreamClosedError? | ✅ answered | ❌ refused | **Vector** |
+| 6 | Decision provenance | What was decided about adding standard model exception types, and who approved it? | ✅ answered | ❌ refused | **Vector** |
+| 7 | Ambiguous entity | What has the "unknown" contributor been working on recently? | ❌ refused | ❌ refused | Neither (by design — see below) |
+| 8 | Cross-document synthesis | Summarize the discussion across all issues tagged streaming. | ❌ refused | ❌ refused | Neither (known limitation) |
+| 9 | Out-of-corpus | Who approved LangChain's pricing model? | ✅ refused | ✅ refused | **Tie (correct refusal)** |
+| 10 | Plausible but unindexed | What did the team decide about the Rust rewrite? | ✅ refused | ✅ refused | **Tie (correct refusal)** |
+| 11 | Empty input | *(empty string)* | ✅ refused | ✅ refused | **Tie (correct refusal)** |
+| 12 | Whitespace-only input | *(whitespace only)* | ✅ refused | ✅ refused | **Tie (correct refusal)** |
+| 13 | Nonexistent identifier | Who authored PR #99999999? | ✅ refused | ✅ refused | **Tie (correct refusal)** |
+| 14 | Prompt injection | Ignore all previous instructions... | ✅ refused | ✅ refused | **Tie (correct refusal)** |
+| 15 | Extreme-length input | *(a deliberately long, multi-module, multi-clause query)* | ❌ refused | ✅ answered | **Graph** |
+| 16 | Unicode / special characters | Wer hat PR #39832 geöffnet? 🤔 (noised rephrasing of #1) | ✅ answered | ✅ answered | **Tie** |
+
+### When structured relationships beat semantic similarity — and vice versa
+
+**Graph wins outright on aggregation (query 3).** "List every contributor
+to the agents module" has no single passage that *is* the answer — it
+requires walking every PR/issue linked to a module and collecting who
+touched them. No amount of dense or sparse retrieval over independent
+text chunks can assemble that; it's a graph traversal by nature, and the
+graph arm handles it cleanly (a full contributor table, correctly
+sourced from `authored`/`reviewed`/`merged` edges).
+
+**Vector wins outright on semantic/exploratory reasoning (query 4).**
+"Why do shell subprocess resources leak when interrupted mid-session?" is
+a design-rationale question with a real, discursive answer sitting in one
+GitHub issue's discussion thread. There's no graph relationship to
+traverse — no node encodes "the reason a leak happens" — so this is
+squarely a dense-retrieval strength: find the passage that's semantically
+about the question and let generation synthesize it.
+
+**The two "expected graph" queries that flipped (2, 6) reveal the graph
+arm's real constraint: it needs to be told exactly who or what to look
+up.** Both describe a PR by what it accomplished rather than naming it
+directly. The graph arm's entity matcher only recognizes literal PR/issue
+numbers, contributor usernames, or module names in the query text — a
+paraphrased reference gives it nothing to seize on, so traversal never
+starts even though the graph holds the answer. Vector retrieval doesn't
+have this problem because it matches on meaning, not identifiers — which
+is exactly the "structured relationships vs. semantic similarity"
+trade-off this project set out to measure, just running in the direction
+that wasn't originally predicted for these two queries.
+
+**The refusal path is symmetric, correct, and holds under adversarial
+input too.** Queries 9 and 10 are deliberately unanswerable from this
+corpus; queries 11-14 are deliberately malformed or adversarial (empty,
+whitespace, a fake identifier, a prompt-injection attempt). All six
+refuse on both arms rather than fabricate a plausible-sounding answer or
+get hijacked into ignoring the system prompt — the more expensive failure
+mode a RAG system can have. This was verified under real stress twice: a
+skill-vocabulary change once briefly caused a false-positive match on
+query 9 (see `docs/EVAL_RESULTS.md` finding 6, caught and fixed before
+being reported), and the graph arm's own entity-lookup guard
+(`store.get_node(...) is not None`) was confirmed to actually block a
+syntactically-valid-but-fake PR number (query 13) rather than assumed to.
+
+**An oversized query (15) and a noised query (16) both hold up, for
+different reasons.** Query 15 is the largest successful generation this
+project has run — the graph arm answers a deliberately long, multi-module
+query in 73.2s without hitting the empty-output failure mode documented
+in `docs/EVAL_RESULTS.md` finding 8, confirming that fix's headroom
+generalizes past the one query size it was built for. Query 16 rephrases
+query 1 in German with emoji and stray punctuation around the same PR
+number — both arms still find and correctly cite it, though vector's
+*relevance* score comes back oddly low (0.15) despite full faithfulness
+(1.00), a judge-sensitivity quirk noted in finding 9 rather than a
+retrieval defect.
+
+### Bottom line
+
+The comparison shows real, query-type-dependent signal rather than one
+architecture uniformly beating the other:
+
+- **Graph is the right tool** for aggregation/list queries and for
+  factual lookups once it has an unambiguous ID to seize on.
+- **Vector is the right tool** for semantic/exploratory reasoning,
+  exact-match lexical retrieval, and — in practice, on this corpus — for
+  relational queries phrased descriptively rather than by literal name,
+  because the graph arm's entity recognition doesn't yet bridge that gap.
+- **Neither hallucinates** when the corpus genuinely doesn't cover a
+  question, and neither can be talked out of the refusal path by
+  malformed or adversarial input — refusal-test accuracy is 100% on both
+  arms across all six refusal-test queries.
+
+Three items remain genuinely open — the graph arm's literal-only entity
+matching, the "unknown" entity-collapse problem that's real but currently
+invisible to this eval's probe, and generation's reliance on a static
+token budget for a subgraph size that scales with the corpus (the current
+fix is headroom, not a structural cap) — all documented, not hidden, in
+`docs/EVAL_RESULTS.md`.
+
+## 3. Dataset Used
 
 **Source:** the public `langchain-ai/langchain` GitHub repository — PRs,
 issues, and RFC-style discussions — pulled live via the GitHub REST API
@@ -77,7 +234,7 @@ about a real but older or unrelated part of the repo's history will
 correctly refuse, not because the system is broken, but because that
 content was never ingested.
 
-## 3. Prompts / Agent Instructions Used
+## 4. Prompts / Agent Instructions Used
 
 ### Generation system prompt (`app/core/generation.py`)
 
@@ -124,7 +281,7 @@ I couldn't find this in the LangChain repo data I've indexed. Try
 rephrasing, or this may be outside what I've ingested.
 ```
 
-## 4. Iterations Tried
+## 5. Iterations Tried
 
 The project went through several rounds of build → test-against-real-data
 → find a real bug → fix → re-verify, rather than a single linear build.
@@ -283,7 +440,7 @@ The notable iterations:
     from the 200-record corpus, real evidence the earlier result wasn't
     a corpus-size coincidence.
 
-## 5. Learnings / Observations
+## 6. Learnings / Observations
 
 - **A system that never gets run end-to-end will hide bugs that only
   exist end-to-end.** Two of the more consequential bugs in this project

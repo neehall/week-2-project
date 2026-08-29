@@ -2,7 +2,7 @@
 
 A file-by-file index of what each source file does, at a glance. For the
 full architecture and reasoning, see [PLAN.md](PLAN.md); for the head-to-head
-results, see [COMPARISON_ANALYSIS.md](COMPARISON_ANALYSIS.md) and
+results, see [PROJECT_WRITEUP.md](PROJECT_WRITEUP.md) (section 2) and
 [EVAL_RESULTS.md](EVAL_RESULTS.md).
 
 This project runs two retrieval arms — hybrid vector-RAG and GraphRAG — over
@@ -54,8 +54,8 @@ LangGraph state machine with a refuse-vs-generate confidence gate.
 | [`data/corpus/README.md`](../data/corpus/README.md) | Describes the corpus directory's purpose and provenance notes. |
 | `data/corpus/raw/issues_and_rfcs.jsonl`, `data/corpus/raw/prs.jsonl` | Raw ingested records from `ingestion.py` — real GitHub data (langchain-ai/langchain), not synthetic. |
 | [`data/eval/README.md`](../data/eval/README.md) | Describes the eval-set directory's purpose. |
-| `data/eval/test_queries.json` | The 10-query comparison set `evaluation.py` runs both arms against. |
-| `data/eval/results.json` | Saved output of the last `run_comparison()` run — the raw numbers behind `EVAL_RESULTS.md`/`COMPARISON_ANALYSIS.md`. |
+| `data/eval/test_queries.json` | The 16-query comparison set (10 original + 6 edge cases) `evaluation.py` runs both arms against. |
+| `data/eval/results.json` | Saved output of the last `run_comparison()` run — the raw numbers behind `EVAL_RESULTS.md`/`PROJECT_WRITEUP.md`. |
 
 ---
 
@@ -66,8 +66,7 @@ LangGraph state machine with a refuse-vs-generate confidence gate.
 | [`docs/SCOPE.md`](SCOPE.md) | The project's scope definition: use case, corpus choice, required node/edge types for the graph schema. |
 | [`docs/PLAN.md`](PLAN.md) | Full architecture and reasoning — the source of truth most other modules' docstrings point back to (chunk sizing, why the vector arm is hybrid, the refusal-path design, eval methodology). Also published as an interactive artifact. |
 | [`docs/EVAL_RESULTS.md`](EVAL_RESULTS.md) | The full investigation log against the real 1000-record corpus: every bug found, its root cause, and the fix — what `checkpoints.py`'s checks are each modeled on. |
-| [`docs/COMPARISON_ANALYSIS.md`](COMPARISON_ANALYSIS.md) | A focused, presentation-oriented summary of how the two arms compare head-to-head. |
-| [`docs/PROJECT_WRITEUP.md`](PROJECT_WRITEUP.md) | The submission write-up. |
+| [`docs/PROJECT_WRITEUP.md`](PROJECT_WRITEUP.md) | The submission write-up — includes (section 2) a focused, presentation-oriented summary of how the two arms compare head-to-head. |
 | [`docs/DEMO_SCRIPT.md`](DEMO_SCRIPT.md) | A ~4–5 minute demo walkthrough script, each query chosen to demonstrate one specific behavior. |
 | [`docs/GITHUB_SETUP.md`](GITHUB_SETUP.md) | One-time steps for connecting the local repo to GitHub. |
 | [`docs/assets/architecture.png`](assets/architecture.png) | Architecture diagram referenced from `PLAN.md`/`README.md`. |
@@ -83,6 +82,7 @@ LangGraph state machine with a refuse-vs-generate confidence gate.
 | [`CHANGELOG.md`](../CHANGELOG.md) | Project change history. |
 | [`requirements.txt`](../requirements.txt) | Python dependencies (LangGraph, LangChain, Anthropic SDK, sentence-transformers, rank-bm25, a cross-encoder reranker, Streamlit, etc.). |
 | [`run.sh`](../run.sh) | Local launch script. |
+| [`scripts/run_eval.py`](../scripts/run_eval.py) | Builds both stores from the committed corpus and runs `evaluation.run_comparison()` over the full query set, writing `data/eval/results.json`. |
 | [`runtime.txt`](../runtime.txt) | Pinned Python runtime version for hosted deploy. |
 | [`.env.example`](../.env.example) | Template for required env vars (`ANTHROPIC_API_KEY`, GitHub token for ingestion, etc.). |
 | [`screenshots/`](../screenshots/) | App screenshots for the write-up. |

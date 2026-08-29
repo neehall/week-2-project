@@ -5,9 +5,9 @@
     "faithfulness": 1.0,
     "relevance": 0.3,
     "correctly_refused": null,
-    "latency_seconds": 7.95,
-    "refused": false,
-    "answer": "The context doesn't say. The chunk for PR #39832 only records its title and description \u2014 \"release(core): 1.6.1 / Release 1.6.1\" \u2014 with no author or co-author attribution [pr-39832-0].\n\nFor comparison, several other PRs in the provided context do list co-authors (e.g., #39293 lists @LincolnBurrows2017 [pr-39293-1], and #39259 lists @r266-tech and @seuthootDev [pr-39259-0]), but no such information is available for #39832. If you need the author, it would have to be looked up directly on GitHub."
+    "latency_seconds": 3.7334812919999933,
+    "answer": "The provided context doesn't identify the author of PR #39832. The only information available for it is its title and description \u2014 \"release(core): 1.6.1 \u2014 Release 1.6.1\" [pr-39832-0] \u2014 with no author or co-author attribution included, unlike some other PRs in the context which list co-authors (e.g., [pr-39292-0], [pr-39259-0]). I can't determine the author from what's here.",
+    "refused": false
   },
   {
     "query_id": 1,
@@ -15,59 +15,59 @@
     "faithfulness": 1.0,
     "relevance": 1.0,
     "correctly_refused": null,
-    "latency_seconds": 2.31,
-    "refused": false,
-    "answer": "PR #39832 (`release(core): 1.6.1`, merged 2026-08-21) was authored by **eyurtsev** [contributor:eyurtsev] [pr:39832]."
+    "latency_seconds": 2.561965041999997,
+    "answer": "PR #39832 (`release(core): 1.6.1`, merged 2026-08-21) was authored by **eyurtsev** [contributor:eyurtsev] [pr:39832].\n\nThat PR also touched the version module, like the other core release PRs in this set [pr:39832 -merged-> module:version.py].",
+    "refused": false
   },
   {
     "query_id": 2,
-    "arm": "vector",
-    "faithfulness": 1.0,
-    "relevance": 0.4,
-    "correctly_refused": null,
-    "latency_seconds": 9.63,
-    "refused": false,
-    "answer": "**Reviewers: not stated in the provided context.** None of the retrieved chunks for PR #39602 list reviewers or review activity. The only person credited besides the author is a co-author trailer: \"Co-authored-by: Soban Shankar <165470467+Soban-2004@users.noreply.github.com>\" [pr-39602-9] \u2014 that's authorship attribution, not a review, so I can't say who reviewed it.\n\n**What it touches:**\n\n- The PR is scoped to `core` (title: \"fix(core): resolve postponed annotations in `StructuredTool._injected_args_keys`\"), specifically `StructuredTool` and its `_injected_args_keys` logic [pr-39602-1][pr-39602-0].\n- Behaviorally, `StructuredTool` now resolves annotations via `typing.get_type_hints(..., include_extras=True)` before identifying injected parameters; if an unrelated forward reference blocks resolving the full signature, each string annotation is resolved independently so resolvable injected args are preserved [pr-39602-1].\n- Callable wrappers resolve annotations from the source of their effective signature (honoring `__wrapped__` and `__signature__`), other callable objects use their `__call__` method, and `functools.partial` callables retain their effective signature so already-bound injected args stay excluded [pr-39602-1][pr-39602-9].\n- The bug fixed: tools with a custom `args_schema` could drop injected arguments like `ToolRuntime` when the wrapped function's module used postponed annotations (`from __future__ import annotations`), stripping the value during `args_schema` validation and failing at invocation [pr-39602-1].\n- It closes #39568 and is related to #33999, and carries a warning that detecting injected args now *evaluates* string annotations via `typing.get_type_hints`, expanding the arbitrary-code-execution surface during tool setup [pr-39602-0].\n\nIf you need the actual reviewer list, that would have to come from the PR's review metadata, which isn't in this context."
-  },
-  {
-    "query_id": 2,
-    "arm": "graph",
-    "faithfulness": 0.0,
-    "relevance": 0.0,
-    "correctly_refused": null,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
-  },
-  {
-    "query_id": 3,
-    "arm": "vector",
-    "faithfulness": 0.0,
-    "relevance": 0.0,
-    "correctly_refused": null,
-    "latency_seconds": 0.31,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
-  },
-  {
-    "query_id": 3,
-    "arm": "graph",
-    "faithfulness": 0.92,
-    "relevance": 0.75,
-    "correctly_refused": null,
-    "latency_seconds": 45.74,
-    "refused": false,
-    "answer": "## Caveat on how \"contributor to the agents module\" is derived\n\nThe graph has no direct `contributor -> module:agents` edges. Contributors connect to `module:agents` only *indirectly*, via PRs that are `-merged->` into it or issues that `-discusses->` it [module:agents]. Below I split the list accordingly.\n\n---\n\n### A. Contributors who authored and/or reviewed PRs merged into `module:agents`\n\n| Contributor | Example linkage |\n|---|---|\n| contributor:ccurme | authored pr:39199, pr:38781, pr:38722, pr:39206; reviewed pr:39284, pr:38910 |\n| contributor:mdrxy | authored pr:38664, pr:38665, pr:38218, pr:38222, pr:38095; reviewed pr:38657, pr:38370 |\n| contributor:imnishitha | authored pr:39245, pr:39247, pr:39248, pr:39252, pr:39258, pr:39259, pr:39291, pr:39292, pr:38171 |\n| contributor:hntrl | authored pr:39576, pr:39284, pr:37867; reviewed pr:39538 |\n| contributor:cbornet | authored pr:38657, pr:38188, pr:34309 |\n| contributor:unknown | authored the langsmith bump PRs (e.g. pr:38319, pr:38293, pr:39279) |\n| contributor:sydney-runkle | reviewed pr:38910, pr:39292, pr:38781, pr:38845, pr:34309 |\n| contributor:eyurtsev | reviewed pr:39705, pr:38781, pr:38722 |\n| contributor:Yigtwxx | authored pr:38960 |\n| contributor:Naominour | authored pr:37727 |\n| contributor:alisatwat3 | authored pr:39171 |\n| contributor:Haaaarry | authored pr:39681 |\n| contributor:syyy44 | authored pr:39754 |\n| contributor:Soban-2004 | authored pr:39238 |\n| contributor:yashodipmore | authored pr:36359 |\n| contributor:jkennedyvz | authored pr:39839 |\n| contributor:nick-hollon-lc | authored pr:38106; reviewed pr:39252 |\n| contributor:colifran | reviewed pr:38370 |\n| contributor:dianatofficial | reviewed pr:39839 |\n| contributor:thushanth-bengre-langchain | reviewed pr:39538 |\n\n### B. Contributors linked only through issues that `-discusses-> module:agents`\n\ncontributor:vnbochkarev-netizen (issue:39627), contributor:zzbazzzbaz (issue:38716/38717/38718), contributor:zamaniali1995 (issue:38708), contributor:Specshub (issue:39210), contributor:asaadjaber (issue:38669), contributor:Eras256 (issue:39007), contributor:lost-particles (issue:36862), contributor:danielenricocahall (issue:38469), contributor:rhcjw (issue:38727), contributor:Juyotal (issue:38841/38842), contributor:YuhaoLin2005 (issue:39073), contributor:Alioth99 (issue:31802), contributor:ghiander (issue:37837), contributor:JessYanCoding (issue:39713), contributor:chang923 (issue:36667), contributor:zeukid (issue:38243), contributor:idesec (issue:39193), contributor:kevinbfrank (issue:35724), contributor:abhyuday1203 (issue:39087), contributor:codeonym (issue:38366), contributor:charlessws (issue:38705), contributor:yuakagi (issue:37938), contributor:sophieamoure2026-ui (issue:39674/39728), contributor:ffoss (issue:38482), contributor:ryanscovill (issue:37844), contributor:alex-feel (issue:38715/38720), contributor:yangbaechu (issue:35475), contributor:het-patel-9104 (issue:39052), contributor:aamar-shahzad (issue:38766/38768), contributor:kevaldekivadiya2415 (issue:38896), contributor:RetroFiveCinque (issue:38066), contributor:philemon-otera (issue:39249), contributor:IanDoesTech (issue:36310), contributor:rautaditya2606 (issue:38504), contributor:chadsr (issue:39127), contributor:cfytrok (issue:31437), contributor:khteh (issue:36889), contributor:llmrix (issue:37093), contributor:hongweipeng (issue:37373), contributor:juanHdezSX (issue:36418), contributor:davidgilbertson (issue:36290), contributor:divvy-s (issue:38203), contributor:dlwldn30 (issue:39842), contributor:Misterio070 (issue:39772), contributor:excelsier (issue:39110), contributor:Danstiv (issue:38034), contributor:cyberfascinate (issue:39194), contributor:yangbingqian (issue:36120), contributor:codeproy (issue:39074), contributor:huanyue6660 (issue:38791), contributor:ErenAta16 (issue:38761), contributor:abhilashpuli98 (issue:39167), contributor:k-smanis (issue:37452), contributor:KevinYyyyyy (issue:39679), contributor:jackjin1997 (issue:38847), contributor:up2itnow0822 (issue:36306), contributor:ujjwalredd (issue:36491), contributor:Natallia-Spichekova-vertex (issue:36606), contributor:Namraa310806 (issue:39329/39363), contributor:zhuweid (issue:34358/37438), contributor:zikrulihsan (issue:37642), contributor:mohammadn0man (issue:38688), contributor:ghostman-git (issue:37723), contributor:jaymarrero2-lab (issue:39188), contributor:uu9 (issue:36804), contributor:Dhruvagnihotri (issue:39314/39316), contributor:Darley-Wey (issue:39334/39335), contributor:casabre (issue:34748), contributor:MarkHe1222 (issue:39644), contributor:EduardoGomezHST (issue:37970), contributor:QiuYucheng2003 (issue:38610), contributor:Saniyagupte (issue:39121), contributor:shkarupa-alex (issue:32612), contributor:kantorcodes (issue:39876), contributor:gouveags (issue:39623), contributor:kwdoug63 (issue:36853), contributor:xiaocode337317439 (issue:37869), contributor:pufuki (issue:39720/39877), contributor:goodpostidea-tech (issue:37290), contributor:AmazyanAyoub (issue:34613).\n\n---\n\n**Note:** `contributor:unknown` is an unresolved/placeholder identity in the graph (it authors all the dependabot-style langsmith bumps), not a real named person. Also, a few contributors' PRs (e.g. pr:39238 [contributor:Soban-2004], pr:39171 [contributor:alisatwat3], pr:39681 [contributor:Haaaarry], pr:37727 [contributor:Naominour]) have no explicit `-merged-> module:agents` edge in the provided context \u2014 they're included via their issue links instead."
-  },
-  {
-    "query_id": 4,
     "arm": "vector",
     "faithfulness": 0.97,
-    "relevance": 0.95,
+    "relevance": 0.4,
     "correctly_refused": null,
-    "latency_seconds": 12.79,
-    "refused": false,
-    "answer": "## Root cause\n\nThe leak comes from the fact that cleanup is tied to two mechanisms that both fail on interrupt paths:\n\n**1. Cleanup is driven by `after_agent`, which never runs on interrupt.**\n\nThe middleware's `after_agent` hook pulls `shell_session_resources` out of state, runs shutdown commands, and then calls `resources.finalizer()` \u2014 the `weakref.finalize` that performs `session.stop()` + `tempdir.cleanup()` [issue-39700-8]. But on interrupt paths \u2014 HITL, `GraphBubbleUp`, a checkpointer pause, a worker crash, or an abandoned thread \u2014 the graph never reaches `after_agent` at all [issue-39700-9].\n\n**2. The `weakref.finalize` fallback can't fire, because the object is pinned by checkpointed state.**\n\nCleanup via `weakref.finalize` on `_SessionResources` only runs when that object is garbage-collected [issue-39700-9]. Since `shell_session_resources` remains in the checkpointed state after an interrupt, `_SessionResources` is kept alive indefinitely and the finalizer callback never fires [issue-39700-9], [issue-39700-6].\n\n## Observable result\n\n- The bash subprocess keeps running after interrupt/abandon [issue-39700-6]\n- Reader threads remain active until the process exits [issue-39700-6], [issue-39700-9]\n- The temp workspace directory is not removed when `workspace_root` is `None` [issue-39700-6]\n\nThe repro demonstrates this by running a command, skipping `after_agent`, deleting all references to state/resources/middleware, and then checking with `os.kill(pid, 0)` that the subprocess is still alive [issue-39700-4].\n\n## Why it wasn't caught\n\nThe existing test `test_shell_middleware_resumable_after_interrupt` simulates an interrupt by preserving state and not calling `after_agent`, then asserts session *reuse* on resume \u2014 it never asserts cleanup for the case where a run is **abandoned** rather than resumed [issue-39700-9].\n\n## Impact and proposed directions\n\nImpacts listed include zombie shell accumulation on long-running HITL/checkpointer servers, disk leakage under `SHELL_TEMP_PREFIX`, lingering reader threads, and a security concern under `HostExecutionPolicy` where orphaned shells still accept commands [issue-39700-9].\n\nDiscussed fixes: a TTL-based side-channel cache keyed by `thread_id` (outside checkpointed state), an `on_run_end`/graph lifecycle hook covering interrupt exits, explicit cleanup on HITL rejection, and a process-group kill via `__del__`/weakref so the subprocess dies even if tempdir cleanup lags [issue-39700-10]."
+    "latency_seconds": 11.743385125000003,
+    "answer": "**Reviewers: not supported by the provided context.** None of the retrieved chunks for PR #39602 list reviewers or review activity. The only person named is a co-author on the commit trailer \u2014 Soban Shankar (`165470467+Soban-2004@users.noreply.github.com`) \u2014 which is a co-authorship credit, not a review [pr-39602-9]. I can't tell you who reviewed it without additional context.\n\n**What it touches:**\n\n- The PR is scoped to `core` (per the title prefix `fix(core)`), specifically `StructuredTool._injected_args_keys` [pr-39602-0].\n- `StructuredTool` now resolves annotations via `typing.get_type_hints(..., include_extras=True)` before identifying injected parameters; if an unrelated forward reference blocks resolving the full signature, each string annotation is resolved independently so resolvable injected args are preserved [pr-39602-1].\n- Callable wrappers resolve annotations from the source of their effective signature, honoring `__wrapped__` and `__signature__`; other callable objects use their `__call__` method; `functools.partial` callables retain their effective signature so already-bound injected args stay excluded [pr-39602-1], [pr-39602-9].\n\n**Motivation:** tools with a custom `args_schema` could drop injected arguments such as `ToolRuntime` when the wrapped function's module used postponed annotations (`from __future__ import annotations`), since every annotation is stored as a plain string and `_injected_args_keys` read raw `signature()` annotations \u2014 so `runtime` was stripped during validation and the call failed at invocation [pr-39602-1]. It closes #39568 and is related to #33999 [pr-39602-0].\n\n**Noted caveat:** the PR carries a warning that this expands the surface area for arbitrary code execution during tool setup, because `typing.get_type_hints` *evaluates* string annotations as Python expressions \u2014 wrapped tool callables must be trusted application code [pr-39602-0].",
+    "refused": false
+  },
+  {
+    "query_id": 2,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.002300333000022192,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 3,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.2845248330000061,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 3,
+    "arm": "graph",
+    "faithfulness": 0.93,
+    "relevance": 0.75,
+    "correctly_refused": null,
+    "latency_seconds": 51.93561862499999,
+    "answer": "**Caveat first:** the graph has no direct `contributor \u2192 module:agents` edges. What it does have is contributors linked to PRs/issues, and those PRs/issues linked to `module:agents` (via `merged->` or `discusses->`). So below I infer \"contributor to agents\" from those two-hop paths, split into (A) people with PR/review activity on PRs merged into the agents module, and (B) people who only appear as issue authors/reviewers on issues that discuss the agents module.\n\n## A. Code contributors (authored or reviewed PRs merged into `module:agents`)\n\n| Contributor | Example evidence |\n|---|---|\n| ccurme | authored pr:39620, pr:39366, pr:39300, pr:39206, pr:39199, pr:38781, pr:38845, pr:38722, pr:38370, pr:39632, pr:39260, pr:38884, pr:38910, pr:39722, pr:39723, pr:39203, pr:38537, pr:39805, pr:39803, pr:39538 [contributor:ccurme] |\n| mdrxy | authored pr:38665, pr:38664, pr:38215, pr:38218, pr:38363, pr:38256, pr:38222, pr:38206, pr:38095, pr:39705, pr:39112, pr:38683; reviewed pr:38657, pr:38370, pr:38188, pr:38171 [contributor:mdrxy] |\n| imnishitha | authored pr:39268, pr:39293, pr:39290, pr:39305, pr:39292, pr:39252, pr:39291, pr:39259, pr:39245, pr:39258, pr:39248, pr:39247, pr:38171 [contributor:imnishitha] |\n| unknown (bot-style account) | authored the langsmith bump PRs merged to agents, e.g. pr:38293, pr:38319, pr:38325, pr:39280 [contributor:unknown] |\n| hntrl | authored pr:39284 (merged\u2192agents), pr:37867; reviewed pr:39538 [contributor:hntrl] |\n| cbornet | authored pr:38657, pr:38188, pr:34309 [contributor:cbornet] |\n| eyurtsev | reviewed pr:39705, pr:38781, pr:38722 [contributor:eyurtsev] |\n| sydney-runkle | reviewed pr:38910, pr:39292, pr:38781, pr:38845, pr:34309 [contributor:sydney-runkle] |\n| nick-hollon-lc | authored pr:38106; reviewed pr:39252 [contributor:nick-hollon-lc] |\n| syyy44 | authored pr:39754 [contributor:syyy44] |\n| Yigtwxx | authored pr:38960 [contributor:Yigtwxx] |\n| yashodipmore | authored pr:36359 [contributor:yashodipmore] |\n| jkennedyvz | authored pr:39839 [contributor:jkennedyvz] |\n| dianatofficial | reviewed pr:39839 [contributor:dianatofficial] |\n| colifran | reviewed pr:38370 [contributor:colifran] |\n| thushanth-bengre-langchain | reviewed pr:39538 [contributor:thushanth-bengre-langchain] |\n\nAdditional PR authors whose PRs are in the context but lack an explicit `merged -> module:agents` edge (agents-adjacent work): **alisatwat3** (pr:39171) [contributor:alisatwat3], **Haaaarry** (pr:39681) [contributor:Haaaarry], **Soban-2004** (pr:39238) [contributor:Soban-2004], **Naominour** (pr:37727) [contributor:Naominour].\n\n## B. Issue-side contributors (authored/reviewed issues that `discusses -> module:agents`)\n\nMisterio070, kantorcodes, Eras256, llmrix, Saniyagupte, Dhruvagnihotri, chadsr, Juyotal, pufuki, cfytrok, ujjwalredd, ghostman-git, MarkHe1222, Natallia-Spichekova-vertex, idesec, Darley-Wey, excelsier, abhilashpuli98, casabre, uu9, alex-feel, zamaniali1995, davidgilbertson, khteh, codeproy, cyberfascinate, Danstiv, ErenAta16, jaymarrero2-lab, lost-particles, ghiander, philemon-otera, KevinYyyyyy, asaadjaber, YuhaoLin2005, juanHdezSX, JessYanCoding, charlessws, ryanscovill, kevaldekivadiya2415, xiaocode337317439, AmazyanAyoub, hongweipeng, goodpostidea-tech, yangbingqian, danielenricocahall, k-smanis, jackjin1997, aamar-shahzad, QiuYucheng2003, huanyue6660, divvy-s, rautaditya2606, zikrulihsan, gouveags, mohammadn0man, zeukid, Specshub, kevinbfrank, yangbaechu, rhcjw, abhyuday1203, Alioth99, IanDoesTech, RetroFiveCinque, ffoss, zhuweid, zzbazzzbaz, yuakagi, shkarupa-alex, chang923, sophieamoure2026-ui, het-patel-9104, kwdoug63, vnbochkarev-netizen, Namraa310806, up2itnow0822, dlwldn30, codeonym, EduardoGomezHST. (Each traced via edges such as [contributor:zzbazzzbaz] \u2192 issue:38718 \u2192 module:agents, [contributor:Namraa310806] \u2192 issue:39363 \u2192 module:agents, etc.)\n\nNote: mdrxy, sydney-runkle and unknown also appear on the issue side (e.g. issue:37778, issue:34770, issue:38170), and Soban-2004 authored issue:39192/39569.\n\nThis list is exhaustive **only with respect to the contributors present in the provided context**; the repo may have contributors not represented here.",
+    "refused": false
+  },
+  {
+    "query_id": 4,
+    "arm": "vector",
+    "faithfulness": 0.95,
+    "relevance": 0.98,
+    "correctly_refused": null,
+    "latency_seconds": 12.354760166000005,
+    "answer": "## Root cause\n\nThe leak comes from how `ShellToolMiddleware` ties cleanup to two things that both fail on interrupt paths: `after_agent` and garbage collection.\n\n**1. Cleanup is only wired to `after_agent`.** The middleware's `after_agent` hook pulls `shell_session_resources` from state, runs shutdown commands, and then invokes `resources.finalizer()` \u2014 the `weakref.finalize` callback that performs `session.stop()` plus tempdir cleanup [issue-39700-8]. That is the only path that explicitly triggers teardown during a normal agent completion [issue-39700-9].\n\n**2. Interrupts never reach `after_agent`.** On HITL interrupts, `GraphBubbleUp`, checkpointer pauses, worker crashes, or abandoned threads, the graph never reaches `after_agent`, so the finalizer is never explicitly invoked [issue-39700-9].\n\n**3. The GC fallback is defeated by checkpointed state.** `weakref.finalize` on `_SessionResources` only fires when that object is garbage-collected, but `shell_session_resources` remains in checkpointed state, pinning `_SessionResources` alive indefinitely [issue-39700-9]. The issue summarizes this as: \"weakref.finalize callback never fires because `_SessionResources` is pinned by checkpointed state\" [issue-39700-6].\n\n## Observable symptoms\n\n- The bash subprocess keeps running after interrupt/abandon [issue-39700-6]\n- Reader threads remain active until the process exits [issue-39700-6][issue-39700-9]\n- The temp workspace directory is not removed when `workspace_root` is `None`; temp dirs under `SHELL_TEMP_PREFIX` may leak disk space [issue-39700-6][issue-39700-9]\n\nThe repro demonstrates this by running a command, skipping `after_agent`, deleting the `state`, `resources`, and `middleware` references, then checking with `os.kill(pid, 0)` that the subprocess is still alive [issue-39700-4].\n\n## Test coverage gap\n\n`test_shell_middleware_resumable_after_interrupt` documents the gap: it simulates an interrupt by preserving state and not calling `after_agent`, then verifies session reuse on resume \u2014 but it never asserts cleanup when a run is *abandoned* instead of resumed [issue-39700-9].\n\n## Impact and proposed fixes\n\nBeyond disk/process accumulation on long-running servers with HITL/checkpointers, there is a security concern: with `HostExecutionPolicy`, orphaned shells continue accepting further commands [issue-39700-9].\n\nDiscussed remedies include a TTL-based side-channel cache keyed by `thread_id` (similar to #35948), an `on_run_end`/graph lifecycle hook covering interrupt exits, explicit cleanup on HITL rejection, and at minimum a process-group kill via `__del__`/weakref so the subprocess dies even if tempdir cleanup is delayed [issue-39700-10].",
+    "refused": false
   },
   {
     "query_id": 4,
@@ -75,39 +75,39 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.0035848340000370627,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 5,
-    "arm": "vector",
-    "faithfulness": 0.95,
-    "relevance": 0.9,
-    "correctly_refused": null,
-    "latency_seconds": 7.92,
-    "refused": false,
-    "answer": "Three PRs reference `StreamClosedError` \u2014 all of them are Dependabot-style bumps of h2 from 4.3.0 to 4.4.1, and each includes the same changelog entry noting that `Stream.end_stream()` now raises `NoSuchStreamError` or `StreamClosedError` instead of a generic `KeyError`:\n\n- **PR #39323** \u2014 bump h2 from 4.3.0 to 4.4.1 in `/libs/partners/qdrant` [pr-39323-1]\n- **PR #39324** \u2014 bump h2 from 4.3.0 to 4.4.1 in `/libs/langchain_v1` [pr-39324-1]\n- **PR #39325** \u2014 bump h2 from 4.3.0 to 4.4.1 in `/libs/langchain` [pr-39325-1]\n\nNo other item in the provided context mentions `StreamClosedError`."
-  },
-  {
-    "query_id": 5,
-    "arm": "graph",
-    "faithfulness": 0.0,
-    "relevance": 0.0,
-    "correctly_refused": null,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
-  },
-  {
-    "query_id": 6,
     "arm": "vector",
     "faithfulness": 1.0,
-    "relevance": 0.55,
+    "relevance": 0.9,
     "correctly_refused": null,
-    "latency_seconds": 15.19,
-    "refused": false,
-    "answer": "**What was decided**\n\nPR #39538 introduced a set of standard exception types in `langchain-core` for common model failures \u2014 authentication, invalid request, rate limit, timeout, and similar conditions [pr-39538-0]. Key design points:\n\n- **Dual inheritance in integrations:** integration packages raise subclasses that inherit from *both* the provider SDK's own exception type and the LangChain one, so existing code that catches provider-specific exceptions keeps working [pr-39538-0].\n- **Retryability signal:** each type carries an `is_retryable` attribute, which retry middleware respects \u2014 e.g. errors caused by a bad API key are not retried, while rate limits and server errors are retried as before [pr-39538-2].\n- **Usage:** callers can catch a specific type such as `ModelTimeoutError` [pr-39538-1], or the base `ModelError` and inspect `e.is_retryable` [pr-39538-3].\n- **Contract:** `ModelError`'s documented contract is that subclasses correspond to conditions providers report consistently, keyed to the HTTP status they surface it with, so the same condition maps to the same exception type regardless of provider [issue-39794-5].\n\nA follow-up issue (#39794) reports that `langchain-mistralai` does not uphold that contract for timeouts and connection failures, which are not classified as model errors [issue-39794-5].\n\n**Who approved it**\n\nThe provided context contains no review, approval, or reviewer/maintainer information for PR #39538 \u2014 only the PR description content and the related issue. I can't say who approved it based on what's here."
+    "latency_seconds": 3.85698241700004,
+    "answer": "Three PRs reference `StreamClosedError` \u2014 all of them are Dependabot-style dependency bumps of h2 from 4.3.0 to 4.4.1, and each includes the same h2 changelog entry noting that `Stream.end_stream()` now raises `NoSuchStreamError` or `StreamClosedError` instead of a generic `KeyError`:\n\n- **PR #39323** \u2014 bump h2 in `/libs/partners/qdrant` [pr-39323-1]\n- **PR #39324** \u2014 bump h2 in `/libs/langchain_v1` [pr-39324-1]\n- **PR #39325** \u2014 bump h2 in `/libs/langchain` [pr-39325-1]\n\nNo other item in the provided context mentions `StreamClosedError`.",
+    "refused": false
+  },
+  {
+    "query_id": 5,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.0029497909999918193,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 6,
+    "arm": "vector",
+    "faithfulness": 0.97,
+    "relevance": 0.5,
+    "correctly_refused": null,
+    "latency_seconds": 7.578319208999972,
+    "answer": "## What was decided\n\nPR #39538 (`feat(core): add standard model exception types`) introduced a set of standard exception types in `langchain-core` for common model failures \u2014 authentication, invalid request, rate limit, timeout, and similar conditions [pr-39538-0].\n\nKey design points visible in the context:\n\n- **Dual inheritance for backward compatibility.** Integration packages raise subclasses that inherit from *both* the provider SDK's own exception type and the LangChain one, so existing callers that catch provider exceptions keep working [pr-39538-0].\n- **Retryability is a property of the exception.** Each type carries an `is_retryable` attribute, which retry middleware now respects \u2014 e.g. errors from a bad API key are not retried, while rate limits or server errors are retried as before [pr-39538-2].\n- **Usage.** Callers can catch a specific type such as `ModelTimeoutError` from `langchain_core.exceptions` [pr-39538-1], or catch the base `ModelError` and inspect `e.is_retryable` [pr-39538-3].\n- **Provider-consistency contract.** `ModelError` documents that subclasses correspond to conditions model providers report consistently, keyed to the HTTP status they surface it with, so the same condition maps to the same exception type regardless of provider [issue-39794-5]. A follow-up issue (#39794) reports that `langchain-mistralai` does not uphold this for timeouts and connection failures [issue-39794-5].\n\n## Who approved it\n\nThe provided context contains no information about reviewers, approvers, or merge decisions for PR #39538 \u2014 only the PR description/examples and a related issue. I can't say who approved it without guessing.",
+    "refused": false
   },
   {
     "query_id": 6,
@@ -115,9 +115,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.0026424160000146912,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 7,
@@ -125,9 +125,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.52,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.28518208299999515,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 7,
@@ -135,9 +135,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.000803000000018983,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 8,
@@ -145,9 +145,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.19,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.21746825000002445,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 8,
@@ -155,9 +155,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": null,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.0006764999999973043,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 9,
@@ -165,9 +165,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": true,
-    "latency_seconds": 0.14,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.1304446660000167,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 9,
@@ -175,9 +175,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": true,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.0004274589999795353,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 10,
@@ -185,9 +185,9 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": true,
-    "latency_seconds": 0.17,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.17187008299998752,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
   },
   {
     "query_id": 10,
@@ -195,8 +195,128 @@
     "faithfulness": 0.0,
     "relevance": 0.0,
     "correctly_refused": true,
-    "latency_seconds": 0.0,
-    "refused": true,
-    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested."
+    "latency_seconds": 0.00045437500000389264,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 11,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.09543870799996057,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 11,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.00040274999997791383,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 12,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.07610270899999705,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 12,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.0003970839999851705,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 13,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.3522565410000311,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 13,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.00044450000001461376,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 14,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.29602949999997463,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 14,
+    "arm": "graph",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": true,
+    "latency_seconds": 0.0008141670000441081,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 15,
+    "arm": "vector",
+    "faithfulness": 0.0,
+    "relevance": 0.0,
+    "correctly_refused": null,
+    "latency_seconds": 0.35752012500000774,
+    "answer": "I couldn't find this in the LangChain repo data I've indexed. Try rephrasing, or this may be outside what I've ingested.",
+    "refused": true
+  },
+  {
+    "query_id": 15,
+    "arm": "graph",
+    "faithfulness": 0.94,
+    "relevance": 0.55,
+    "correctly_refused": null,
+    "latency_seconds": 73.20960637499996,
+    "answer": "## Important scope caveats before the list\n\nTwo limits on what I can answer from the supplied context:\n\n1. **Only two modules are indexed here** \u2014 `module:agents` and `module:tools`. There are no `core`, `langchain`, `community`, or `partners` module nodes in this subgraph, so I cannot report per-module attribution for them. (Core/partner *work* is visible only via PR titles such as `fix(core): \u2026` [pr:39572] or `fix(fireworks): \u2026` [pr:39620], and via skill nodes like [skill:openai], [skill:anthropic], [skill:fireworks], [skill:perplexity].)\n2. **Every PR node in this context carries a `merged_at` timestamp**, so all of them are merged; there are **no closed-unmerged PRs** represented. I also have **no discussion text, comment bodies, or PR descriptions** \u2014 only titles, timestamps and edges. So the \"one-paragraph summary of the discussion\" cannot be supported; I can only paraphrase titles and linked issues. I will not invent discussion content.\n\n---\n\n## Retries / retry-middleware\n\n| PR | Author | Reviewers | Module | State | Linked issue |\n|---|---|---|---|---|---|\n| `fix(langchain): re-raise non-retryable exceptions in ModelRetryMiddleware` [pr:38960] | Yigtwxx [contributor:Yigtwxx] | none recorded | agents [pr:38960] | merged 2026-08-18 [pr:38960] | issue:38893 [pr:38960] |\n| `fix(langchain): only retry retryable exceptions in ToolRetryMiddleware` [pr:38845] | ccurme [contributor:ccurme] | sydney-runkle [contributor:sydney-runkle] | agents [pr:38845] | merged 2026-07-16 [pr:38845] | none recorded |\n| `docs(langchain): clarify ToolRetryMiddleware exception handling` [pr:38884] | ccurme [contributor:ccurme] | none recorded | agents [pr:38884] | merged 2026-07-16 [pr:38884] | none recorded |\n| `fix(langchain): propagate interrupts through ToolRetryMiddleware` [pr:38722] | ccurme [contributor:ccurme] | eyurtsev [contributor:eyurtsev] | agents [pr:38722] | merged 2026-07-08 [pr:38722] | none recorded |\n| `fix(langchain): sanitize anthropic cache markers on fallback retries` [pr:37867] | hntrl [contributor:hntrl] | none recorded | agents [pr:37867] | merged 2026-07-05 [pr:37867] | issue:33709 [pr:37867] |\n| `feat(langchain): ToolErrorMiddleware` [pr:38781] | ccurme [contributor:ccurme] | eyurtsev, sydney-runkle, ccurme [contributor:eyurtsev][contributor:sydney-runkle][contributor:ccurme] | agents [pr:38781] | merged 2026-07-14 [pr:38781] | none recorded |\n\nRelated open issues (no merged PR linked in context): [issue:38893] ModelRetryMiddleware turning non-retryable exceptions into an error `AIMessage` \"since #38845\", [issue:37778] bounded forced retry after tool validation errors, [issue:35475] `RunnableRetry.batch/abatch` corruption.\n\n## Streaming\n\n| PR | Author | Reviewers | Module | State | Linked issue |\n|---|---|---|---|---|---|\n| `fix(core): remove stale sync-stream xfail [closes #39720]` [pr:39723] | ccurme [contributor:ccurme] | none recorded | agents [pr:39723] | merged 2026-08-18 [pr:39723] | issue:39720 [pr:39723] |\n| `fix(fireworks): avoid repeated service_tier [closes #39619]` [pr:39620] | ccurme [contributor:ccurme] | none recorded | agents [pr:39620], uses [skill:fireworks] | merged 2026-08-12 [pr:39620] | issue:39619 (`service_tier` concatenated across streamed chunks) [pr:39620][issue:39619] |\n\nUnresolved streaming issues in context with no linked merged PR: [issue:38366] (merge_dicts doubling `model_name`/`finish_reason`), [issue:35514] (SSE fragmentation \u2192 empty tool args), [issue:39335]/[issue:39334] (continuation deltas overwriting id/name), [issue:35436] (`disable_streaming=\"tool_calling\"` crash), [issue:38034].\n\n## Memory leaks & subprocess cleanup\n\n| PR | Author | Reviewers | Module | State | Linked issue |\n|---|---|---|---|---|---|\n| `fix(langchain): avoid shared process-group kill in shell middleware` [pr:36359] | yashodipmore [contributor:yashodipmore] | none recorded (author also appears as reviewer on the issue [contributor:yashodipmore]) | agents [pr:36359] | merged 2026-07-06 [pr:36359] | issue:36358 (`ShellToolMiddleware` may kill caller process group when `create_process_group=False`) [pr:36359][issue:36358] |\n\nNo merged PR in this context addresses [issue:39700] (ShellToolMiddleware leaking subprocess/temp dir on interrupt) or [issue:38610] (ChatOpenRouter leaking `httpx.AsyncClient` \u2192 port exhaustion). [issue:39329] (`InMemoryCache.update()` thread-safety) is likewise unlinked.\n\n## Structured tool schemas / annotations / injected args\n\n| PR | Author | Reviewers | Module | State | Linked issue |\n|---|---|---|---|---|---|\n| `fix(core): resolve postponed annotations in StructuredTool._injected_args_keys` [pr:39602] | mdrxy [contributor:mdrxy] | mdrxy, sydney-runkle [contributor:mdrxy][contributor:sydney-runkle] | tools [pr:39602] | merged 2026-08-19 [pr:39602] | issue:39568 [pr:39602] |\n| `fix(core): respect pydantic aliases when validating tool inputs` [pr:39572] | hntrl [contributor:hntrl] | ccurme [contributor:ccurme] | tools [pr:39572] | merged 2026-08-13 [pr:39572] | issue:38780 [pr:39572] |\n| `fix(core): fail fast when tool schemas can't resolve forward refs during serialization` [pr:39570] | hntrl [contributor:hntrl] | sydney-runkle [contributor:sydney-runkle] | tools [pr:39570] | merged 2026-08-18 [pr:39570] | issue:39099 [pr:39570] |\n| `fix(core): handle tool descriptions for infer_schema=False` [pr:39573] | hntrl [contributor:hntrl] | ccurme [contributor:ccurme] | tools [pr:39573] | merged 2026-08-12 [pr:39573] | issue:38138 [pr:39573] |\n| `fix(core): handle v1 base model validation in async path` [pr:39576] | hntrl [contributor:hntrl] | ccurme [contributor:ccurme] | tools [pr:39576] | merged 2026-08-12 [pr:39576] | issue:36491 [pr:39576] |\n| `fix(core): handle injected args for subclasses of BaseTool` [pr:39202] | ccurme [contributor:ccurme] | none recorded | tools [pr:39202] | merged 2026-08-02 [pr:39202] | none recorded |\n| `fix(core): respect include_injected=False with filter_args` [pr:39200] | ccurme [contributor:ccurme] | none recorded | tools [pr:39200] | merged 2026-08-02 [pr:39200] | none recorded |\n| `fix(core): document reserved argument names for tools` [pr:39207] | ccurme [contributor:ccurme] | none recorded | tools [pr:39207] | merged 2026-08-02 [pr:39207] | none recorded |\n| `fix(core): require all nested properties for strict tool schemas` [pr:39306] | imnishitha [contributor:imnishitha] | imnishitha, ccurme, sydney-runkle [contributor:imnishitha][contributor:ccurme][contributor:sydney-runkle] | *no module edge recorded* [pr:39306] | merged 2026-08-18 [pr:39306] | issue:33869 [pr:39306] |\n| `fix(core): preserve flat tool args schema for RootModel runnables` [pr:39307] | imnishitha [contributor:imnishitha] | ccurme [contributor:ccurme] | tools [pr:39307] | merged 2026-08-07 [pr:39307] | issue:38713 [pr:39307] |\n| `perf(core): memoize BaseTool.tool_call_schema subset model and cache model_json_schema` [pr:38073] | nick-hollon-lc [contributor:nick-hollon-lc] | nick-hollon-lc, diusazzad, avinashkamat48, sydney-runkle [contributor:nick-hollon-lc][contributor:diusazzad][contributor:avinashkamat48][contributor:sydney-runkle] | tools [pr:38073] | merged 2026-06-17 [pr:38073] | none recorded |\n| `fix(core): make convert_to_openai_function handle callables and non-dict mappings` [pr:39750] | gaoanze888 [contributor:gaoanze888] | ccurme [contributor:ccurme] | *no module edge recorded* [pr:39750] | merged 2026-08-19 [pr:39750] | issue:39749 [pr:39750] |\n| `fix(anthropic): handle tool schemas with unsupported top-level composition` [pr:39273] | mdrxy [contributor:mdrxy] | mdrxy, hntrl [contributor:mdrxy][contributor:hntrl] | tools [pr:39273], uses [skill:anthropic] | merged 2026-08-05 [pr:39273] | none recorded (see [issue:39271]) |\n\n## Model exception types\n\n| PR | Author | Reviewers | Module | State | Linked issue |\n|---|---|---|---|---|---|\n| `feat(core): add standard model exception types` [pr:39538] | ccurme [contributor:ccurme] | hntrl, thushanth-bengre-langchain, ccurme [contributor:hntrl][contributor:thushanth-bengre-langchain][contributor:ccurme] | agents [pr:39538] | merged 2026-08-19 [pr:39538] | none recorded |\n| `fix(openai): handle ContextWindowExceededError` [pr:39300] | ccurme [contributor:ccurme] | none recorded | agents [pr:39300], uses [skill:openai] | merged 2026-08-07 [pr:39300] | none recorded |\n\n## Graph traversal / graph control-flow (GraphBubbleUp, interrupts)\n\n| PR | Author | Reviewers | Module | State | Linked issue |\n|---|---|---|---|---|---|\n| `fix(langchain): propagate model middleware control flow` [pr:39199] | ccurme [contributor:ccurme] | none recorded | agents [pr:39199] | merged 2026-08-02 [pr:39199] | issue:38837 (GraphInterrupt swallowed by retry/fallback middleware) and issue:39121 (GraphBubbleUp swallowed) [pr:39199] |\n| `fix(langchain): propagate interrupts through ToolRetryMiddleware` [pr:38722] | ccurme [contributor:ccurme] | eyurtsev [contributor:eyurtsev] | agents [pr:38722] | merged 2026-07-08 [pr:38722] | none recorded |\n| `fix(langchain): stop HITL approval gates from silently failing open` [pr:39247] | imnishitha [contributor:imnishitha] | ccurme [contributor:ccurme] | agents [pr:39247] | merged 2026-08-05 [pr:39247] | issue:38838 [pr:39247] |\n\nStill open in this area: [issue:39877] (`wrap GraphBubbleUp with agent context in middleware`), authored by pufuki [contributor:pufuki].\n\n---\n\n## Cross-referenced contributors appearing in multiple categories\n\n- **ccurme** [contributor:ccurme] \u2014 by far the widest overlap; appears in *all six* categories: retries (author of [pr:38845], [pr:38884], [pr:38722], [pr:38781]), streaming ([pr:39723], [pr:39620]), structured tool annotations (author of [pr:39202], [pr:39200], [pr:39207]; reviewer of [pr:39572], [pr:39570]* , [pr:39573], [pr:39576], [pr:39307], [pr:39306], [pr:39750]), model exception types (author *and* reviewer of [pr:39538]; author of [pr:39300]), and graph control-flow ([pr:39199], reviewer on [pr:39247]). The overlap is structural: ccurme is the reviewer of record on essentially every hntrl and imnishitha core/tool-schema PR and simultaneously the author of the middleware-level retry and exception work, which is why retry PRs ([pr:38845]) and the exception-type PR ([pr:39538]) share the same hand. (*[pr:39570] lists sydney-runkle as reviewer, not ccurme.)\n- **hntrl** [contributor:hntrl] \u2014 spans retries ([pr:37867]), structured tool annotations ([pr:39572], [pr:39570], [pr:39573], [pr:39576]), and model exception types (reviewer of [pr:39538]). hntrl also reviewed [pr:39273] and the underlying tool-schema issues [issue:38780], [issue:36491], [issue:38138], [issue:39099], [issue:38720] \u2014 i.e. hntrl is the author on the fixes and the triager on the corresponding issues, explaining the author\u2194reviewer pairing with ccurme.\n- **sydney-runkle** [contributor:sydney-runkle] \u2014 spans retries (reviewer of [pr:38845], [pr:38781]) and structured tool annotations (reviewer of [pr:39602], [pr:39570], [pr:39306], [pr:38073], [pr:39292]). The overlap is Pydantic-adjacent: the same reviewer covers validation/injected-arg issues ([issue:34246], [issue:34770] \u2014 which sydney-runkle authored \u2014 and [issue:33709], reviewed) and retry-middleware exception semantics.\n- **imnishitha** [contributor:imnishitha] \u2014 spans structured tool schemas ([pr:39306], [pr:39307]) and graph/HITL control flow ([pr:39247]), plus a large middleware review footprint ([pr:39252], [pr:39268], [pr:39245], [pr:39258], [pr:39248], [pr:38171]) and issue triage across [issue:38838], [issue:34159], [issue:36568], [issue:37093].\n- **mdrxy** [contributor:mdrxy] \u2014 appears in structured tool annotations as author of [pr:39602] and [pr:39273], and as issue author/triager for [issue:39271] (top-level `oneOf`/`anyOf` sanitization) and [issue:37778] (bounded retry), linking the schema and retry categories.\n- **eyurtsev** [contributor:eyurtsev] \u2014 retries/graph overlap only: reviewer on [pr:38722] and [pr:38781], plus [pr:39705].\n- **Yigtwxx** [contributor:Yigtwxx] \u2014 authored the retry fix [pr:38960] *and* the issues describing the retry/interrupt bugs it addresses ([issue:38893], [issue:38837], [issue:38838], [issue:38840]), which is why the same name recurs across the retry and graph-control-flow rows.\n\n**What I cannot supply from this context:** per-PR discussion narratives, review comment content, closed-without-merge PRs, and any coverage of `core`/`community`/`partners` as indexed modules.",
+    "refused": false
+  },
+  {
+    "query_id": 16,
+    "arm": "vector",
+    "faithfulness": 1.0,
+    "relevance": 0.15,
+    "correctly_refused": null,
+    "latency_seconds": 5.093684124999982,
+    "answer": "Die bereitgestellten Kontextinformationen enthalten f\u00fcr PR #39832 nur den Titel und die Beschreibung (\u201erelease(core): 1.6.1\u201c) [pr-39832-0] \u2014 **kein Autor bzw. keine Angabe, wer den PR ge\u00f6ffnet hat**, ist darin vorhanden.\n\nIch kann die Frage daher auf Basis des Kontexts nicht beantworten. Um den Autor zu ermitteln, w\u00e4re ein Kontext-Chunk oder ein Graph-Knoten mit Contributor-/Author-Information zu PR #39832 n\u00f6tig.",
+    "refused": false
+  },
+  {
+    "query_id": 16,
+    "arm": "graph",
+    "faithfulness": 1.0,
+    "relevance": 0.95,
+    "correctly_refused": null,
+    "latency_seconds": 4.951825499999984,
+    "answer": "PR **#39832** \u2013 \u201erelease(core): 1.6.1\" (gemerged am 2026-08-21T18:38:04+00:00) \u2013 wurde von **eyurtsev** verfasst [contributor:eyurtsev] [pr:39832].\n\nDer Graph zeigt dazu die Kante `contributor:eyurtsev -authored-> pr:39832` [contributor:eyurtsev]. Au\u00dferdem ist dieser PR mit dem Modul `version.py` verkn\u00fcpft (`pr:39832 -merged-> module:version.py`) [module:version.py].\n\nHinweis: Die Kontextdaten enthalten nur \u201eauthored\"-Beziehungen; ob dieselbe Person den PR technisch auch *ge\u00f6ffnet* hat (im Sinne von GitHub \u201eopened by\"), geht aus dem gegebenen Kontext nicht ausdr\u00fccklich hervor.",
+    "refused": false
   }
 ]

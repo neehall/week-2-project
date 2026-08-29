@@ -15,6 +15,8 @@ investigation log (bugs found, root causes, every fix).
 
 Full architecture, diagrams, and reasoning: **[Two Arms, One Corpus](docs/PLAN.md)**
 (also published as an interactive artifact — see `docs/PLAN.md` for the link).
+For a file-by-file index of what each source file does, see
+**[docs/CODE_MAP.md](docs/CODE_MAP.md)**.
 
 ## Architecture
 
@@ -140,6 +142,7 @@ docs/
   COMPARISON_ANALYSIS.md    # head-to-head GraphRAG vs. vector-RAG summary (.docx also generated)
   EVAL_RESULTS.md           # the full investigation log — bugs found, root causes, fixes
   PROJECT_WRITEUP.md        # project overview, dataset, prompts, iterations (.docx also generated)
+  CODE_MAP.md               # file-by-file index of what each source file does
   DEMO_SCRIPT.md            # a query-by-query demo walkthrough
 screenshots/                # the chat UI, working
 ```

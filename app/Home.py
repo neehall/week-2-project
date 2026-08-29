@@ -6,6 +6,15 @@ the cited answer (or refusal) — no retrieval logic belongs here.
 """
 
 import json
+import sys
+from pathlib import Path
+
+# `streamlit run app/Home.py` (both locally, per run.sh's comment, and on
+# Streamlit Community Cloud, which invokes this file directly rather than
+# via run.sh) puts this file's own directory (app/) on sys.path, not the
+# repo root — so `from app.common import config` below fails with
+# ModuleNotFoundError unless the repo root is added explicitly first.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 

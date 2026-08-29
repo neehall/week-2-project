@@ -9,6 +9,15 @@ they were last edited.
 """
 
 import json
+import sys
+from pathlib import Path
+
+# Each Streamlit page runs as its own top-level script, so it lands on
+# sys.path the same way app/Home.py does — needs the repo root added
+# explicitly for `from app.common import config` to resolve. See
+# app/Home.py's matching comment for why (local run.sh's PYTHONPATH
+# export doesn't help here; each page re-executes from scratch).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import pandas as pd
 import streamlit as st

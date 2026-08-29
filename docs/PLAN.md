@@ -80,8 +80,8 @@ of this table was written as generic templates before any corpus existed;
 9 of 10 turned out to have zero occurrences once real data was pulled
 (see docs/EVAL_RESULTS.md for that finding). Queries 1-7 below were
 rewritten against actual corpus content; 8-10 already worked as written.
-See **docs/COMPARISON_ANALYSIS.md** for the head-to-head results and
-analysis, or **docs/EVAL_RESULTS.md** for the full investigation log.
+See **docs/PROJECT_WRITEUP.md** (section 2) for the head-to-head results
+and analysis, or **docs/EVAL_RESULTS.md** for the full investigation log.
 
 | # | Query type | Example | Expected edge |
 |---|---|---|---|

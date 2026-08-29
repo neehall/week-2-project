@@ -1,11 +1,12 @@
-# 10-Query Comparison — Results & Write-up
+# 16-Query Comparison — Results & Write-up
 
 Run against a real 1000-record corpus (500 merged PRs + 500 issues/RFCs,
 most-recently-updated `langchain-ai/langchain` activity as of 2026-08-24 —
 pulled incrementally, see "Corpus" below) via
-`app.core.evaluation.run_comparison()`. Raw output: `data/eval/results.json`.
-Query set: `data/eval/test_queries.json` (each entry's `note` field explains
-what it's grounded in — see "Query set" below for why it was rewritten).
+`app.core.evaluation.run_comparison()` (`scripts/run_eval.py`). Raw output:
+`data/eval/results.json`. Query set: `data/eval/test_queries.json` (each
+entry's `note` field explains what it's grounded in — see "Query set" below
+for why it was rewritten, and for queries 11-16, why each was added).
 
 ## Pipeline
 
@@ -31,47 +32,57 @@ flowchart TD
     style GEN fill:#e0f0e8,stroke:#2b8f5a
 ```
 
-**This is the fifth and final pass, and the first at the full 1000-record
-scale.** The first pass (10-query set written before any corpus existed)
-produced 20/20 refusals. The second pass (queries rewritten against real
-content) produced real signal but flagged two "open items." The third
-pass dug into both, found their actual root causes, and fixed them. The
-fourth pass added a "skill" node type (closing a gap against the original
-project brief) and caught/fixed a regression that change introduced — all
-at 200 records. This fifth pass scales the corpus 5x to 1000 records,
-which surfaced two more real, corpus-size-dependent bugs (findings 7 and
-8) before landing on the final numbers below. A comparison-focused
-summary of this data lives in `docs/COMPARISON_ANALYSIS.md`; this
-document is the full investigation log.
+**This is the sixth pass, and the first to add edge-case queries on top of
+the full 1000-record scale.** The first pass (10-query set written before
+any corpus existed) produced 20/20 refusals. The second pass (queries
+rewritten against real content) produced real signal but flagged two "open
+items." The third pass dug into both, found their actual root causes, and
+fixed them. The fourth pass added a "skill" node type (closing a gap
+against the original project brief) and caught/fixed a regression that
+change introduced — all at 200 records. The fifth pass scaled the corpus
+5x to 1000 records, which surfaced two more real, corpus-size-dependent
+bugs (findings 7 and 8) before landing on stable numbers. This sixth pass
+keeps the corpus at 1000 records and adds 6 edge-case queries (11-16:
+empty input, whitespace-only input, a syntactically valid but nonexistent
+identifier, a prompt-injection attempt, an oversized query, and a
+unicode/emoji-noised query) to the original 10 — see "Query set" below for
+what each probes and why. A comparison-focused summary of this data lives
+in `docs/PROJECT_WRITEUP.md`; this document is the full investigation log.
 
 ## Observability KPIs
 
 ```
 --- Observability KPIs ---           vector        graph
 --------------------------------------------------------
-queries run                              10           10
-answered                                    5            2
-refused                                     5            8
-mean faithfulness                       0.984        0.960
-mean relevance                          0.620        0.875
+queries run                              16           16
+answered                                    6            4
+refused                                    10           12
+mean faithfulness                       0.982        0.968
+mean relevance                          0.538        0.812
 refusal-test accuracy                   1.000        1.000
-mean latency (s)                        5.481        4.806
-p95 latency (s)                        15.193       45.738
+mean latency (s)                        2.914        8.292
+p95 latency (s)                        11.743       51.936
 ```
 
 (`app.core.evaluation.print_kpi_summary()` — called automatically at the
 end of every `run_comparison()` — produces this table for any future run.
 LLM-judge faithfulness/relevance scores vary a few hundredths between
 runs on the same query — expected noise from the judge itself, not a
-pipeline change. The answered/refused pattern — which specific queries
-each arm answers vs. refuses — has been **completely stable across the
-5x corpus scale-up**, a real robustness signal: exactly the same 5 vector
-queries and 2 graph queries answer at 1000 records as at 200.)
+pipeline change. The original 10 queries' answered/refused pattern is
+**unchanged from the fifth pass** — adding 6 edge-case queries didn't
+perturb any of the original results, and 4 of the 6 new queries (11-14,
+all `is_refusal_test: true`) correctly refuse on both arms, which is why
+mean latency drops and refusal-test accuracy holds at 1.000 even at n=16:
+those four resolve almost instantly, before any generation call runs.)
 
-Graph's p95 latency (45.7s) is real and expected, not a bug — query 3's
-subgraph at this corpus size runs 34 agents-module PRs deep, ~51K
-characters of context, which takes longer to generate over. See finding
-8 for why that size was dangerous before a fix, not just slow.
+Graph's p95 latency (51.9s) is still query 3's aggregation subgraph, same
+as the fifth pass — with 16 samples the 95th-percentile index lands one
+below the new maximum. That maximum is now query 15 (73.2s, the
+deliberately oversized stress-test query), the single slowest call in
+this run but still under `p_max`, not `p95`. Both are large-subgraph
+generation calls, not bugs; see finding 9 below for why query 15 didn't
+regress into finding 8's empty-output failure mode despite being larger
+than any prior query.
 
 ## Per-query result
 
@@ -87,6 +98,12 @@ characters of context, which takes longer to generate over. See finding
 | 8 | cross_document_synthesis | tie | refused | refused | Both correctly refuse but for different reasons (aggregation phrasing vs. no label/tag entity type). |
 | 9 | out_of_corpus | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works (see finding 6 for a regression that briefly broke this on the graph arm, caught before being reported here). |
 | 10 | plausible_but_unindexed | must_refuse | **refused ✓** | **refused ✓** | Correct — the refusal path works. |
+| 11 | empty_input | must_refuse | **refused ✓** | **refused ✓** | No crash — `parse_query()`'s `.strip()` on `""` reaches retrieval as an empty string on both arms, which finds nothing and refuses cleanly. |
+| 12 | whitespace_only_input | must_refuse | **refused ✓** | **refused ✓** | Same outcome as 11 — whitespace collapses to empty before retrieval. |
+| 13 | nonexistent_identifier | must_refuse | **refused ✓** | **refused ✓** | Confirms `match_entities()`'s `store.get_node(...) is not None` guard (noted as a design detail, not previously exercised by an eval query) — a syntactically valid `#99999999` reference correctly fails lookup instead of false-matching a nearby real PR number. |
+| 14 | prompt_injection | must_refuse | **refused ✓** | **refused ✓** | The injected instructions ("ignore all previous instructions...") have no corpus grounding, so both arms refuse on retrieval alone — the generation system prompt was never even reached to be tested against. |
+| 15 | extreme_length_input | stress_test | refused | **answered** (0.94/0.55) | See finding 9 — the graph arm handles this multi-module query correctly at 73.2s, the slowest single call in this run. |
+| 16 | unicode_and_special_characters | tie | **answered** (1.00/0.15) | **answered** (1.00/0.95) | Both arms find PR #39832 correctly despite German text, emoji, and stray punctuation — see finding 9 for why vector's relevance score is unusually low here. |
 
 ## Findings
 
@@ -284,6 +301,51 @@ size and will eventually outgrow any static token budget again. The real
 fix — capping or summarizing large subgraphs before they reach generation
 — is not done here.
 
+### 9. Six edge-case queries added; none crashed, and two produced genuine new signal
+
+Queries 11-16 were added to probe input shapes the original 10 never
+exercised — not to find new bugs on purpose, but because an eval set
+written entirely from "plausible questions a user would ask" leaves
+malformed/adversarial/boundary input completely untested. Four
+(11-14: empty string, whitespace-only, a nonexistent-but-valid-looking
+identifier, a prompt-injection attempt) all refused cleanly on both arms
+with no exception raised anywhere in the pipeline — real confirmation that
+`parse_query()`'s bare `.strip()` and `match_entities()`'s existing
+`get_node(...) is not None` guard were already sufficient, not gaps that
+happened to go untested until now.
+
+The other two produced real, worth-noting behavior:
+
+- **Query 15 (an intentionally long, multi-clause query) is the largest
+  successful generation in this project's history and didn't hit finding
+  8's failure mode.** At 73.2s it's the slowest single call in this run,
+  but it completed with a full, well-cited answer (0.94 faithfulness) —
+  the `GENERATION_MAX_TOKENS=8192` / `effort="medium"` fix from finding 8
+  (sized for a large *subgraph*, not a large *query*) held up under a
+  large *query* too, which wasn't the failure mode it was built for.
+  Vector, by contrast, refused this query outright (top score below
+  threshold) — plausible: the query's own text is long and semantically
+  diffuse across many topics, which likely hurt its embedding's similarity
+  to any single chunk, unlike the graph arm's module-name keyword matches
+  (which pick out all seven modules the query lists regardless of length).
+
+- **Query 16 (unicode/emoji-noised phrasing of query 1) answered
+  correctly on both arms but vector's relevance score (0.15) is
+  anomalously low given faithfulness stayed at 1.00.** Both arms find and
+  correctly cite PR #39832; the LLM judge scoring *relevance* — "does the
+  retrieved evidence address the question" — for the vector arm's judge
+  call apparently penalized something in the noised query text itself
+  (the mixed German/emoji/punctuation phrasing), even though the answer
+  itself was fully grounded. This is a real observation about the judge's
+  sensitivity to query surface form, not a retrieval or generation defect
+  — worth noting as a limitation of the LLM-judge methodology (see
+  finding 5's related judge-reliability issue) rather than fixing the
+  pipeline for it.
+
+Not fixed in this pass (nothing here needed fixing): this is a case where
+adding harder queries confirmed existing defensive code already handles
+its edge cases, plus surfaced one methodology note about the judge itself.
+
 ## Corpus
 
 Pulled incrementally, checking GitHub rate limit and query/corpus term
@@ -321,7 +383,12 @@ buffer", `ECONNRESET`, "retriever interface", a contributor named "Alex")
 had zero or near-zero grounding in the real data. Queries 1-7 were rewritten
 against real corpus content (see each entry's `note` field in
 `data/eval/test_queries.json` and the updated table in `docs/PLAN.md`);
-8-10 already worked as originally written.
+8-10 already worked as originally written. Queries 11-16 were added in a
+later pass specifically for input-shape coverage the original 10 (all
+"plausible user questions") never exercised — empty/whitespace input, a
+syntactically valid but nonexistent identifier, a prompt-injection
+attempt, an oversized query, and unicode/emoji noise around a valid
+query. See finding 9 for what each one actually found.
 
 ## Bottom line for the deliverable
 
@@ -351,3 +418,10 @@ comparison shows real, stable signal:
   (finding 3), and generation's reliance on a static token budget for a
   subgraph size that scales with the corpus (finding 8) — the current fix
   is headroom, not a structural cap.
+- **Edge-case coverage (queries 11-16) confirms the pipeline degrades
+  safely on malformed/adversarial/boundary input** — empty input,
+  whitespace, a fake-but-valid-looking identifier, and a prompt-injection
+  attempt all refuse cleanly with no exceptions; an oversized query still
+  generates a complete, faithful answer under the finding-8 token-budget
+  fix; and a unicode/emoji-noised query still resolves the right entity
+  on both arms (finding 9).

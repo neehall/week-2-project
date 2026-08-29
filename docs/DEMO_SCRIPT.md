@@ -2,8 +2,8 @@
 
 A ~4-5 minute walkthrough. Each query below is picked to demonstrate one
 specific, real finding from `docs/EVAL_RESULTS.md` — not a random sample.
-See `docs/COMPARISON_ANALYSIS.md` for the head-to-head summary this
-script is built around. Worth pulling up on screen once, briefly, before
+See `docs/PROJECT_WRITEUP.md` (section 2) for the head-to-head summary
+this script is built around. Worth pulling up on screen once, briefly, before
 the live queries:
 
 ```mermaid
@@ -91,7 +91,7 @@ generation ever runs.
 
 ## 6. Close (30s)
 
-- Pull up `docs/COMPARISON_ANALYSIS.md`'s KPI table (or re-run
+- Pull up `docs/PROJECT_WRITEUP.md`'s KPI table (section 2) (or re-run
   `evaluation.run_comparison()` live in a terminal if you want the
   observability output on screen) — mean faithfulness ~0.99 on both arms
   when they answer, correct refusal on both refusal-test queries.

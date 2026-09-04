@@ -16,7 +16,9 @@ investigation log (bugs found, root causes, every fix).
 Full architecture, diagrams, and reasoning: **[Two Arms, One Corpus](docs/PLAN.md)**
 (also published as an interactive artifact — see `docs/PLAN.md` for the link).
 For a file-by-file index of what each source file does, see
-**[docs/CODE_MAP.md](docs/CODE_MAP.md)**.
+**[docs/CODE_MAP.md](docs/CODE_MAP.md)**, or the visual version below.
+
+![GraphRAG Dossier](docs/dossier.svg)
 
 ## Architecture
 

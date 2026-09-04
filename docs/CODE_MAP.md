@@ -88,3 +88,4 @@ LangGraph state machine with a refuse-vs-generate confidence gate.
 | [`runtime.txt`](../runtime.txt) | Pinned Python runtime version for hosted deploy. |
 | [`.env.example`](../.env.example) | Template for required env vars (`ANTHROPIC_API_KEY`, GitHub token for ingestion, etc.). |
 | [`screenshots/`](../screenshots/) | App screenshots for the write-up. |
+| [`docs/dossier.svg`](dossier.svg) | The visual companion to this file — a poster-style infographic covering the same file-by-file index, embedded in the README. |

@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2149" viewBox="0 0 1600 2149"><rect width="1600" height="2149" fill="#eef0ef"/><circle cx="60" cy="66" r="4.5" fill="#7a2e3a"/>
+<text x="76" y="72" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="14" letter-spacing="2" fill="#7a2e3a" text-anchor="start">CODEBASE DOSSIER · WEEK 2 PROJECT</text>
+<text x="58" y="140" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="700" fill="#171a1f" text-anchor="start">GraphRAG Dossier</text>
+<text x="60" y="178" font-family="'Helvetica Neue', Arial, sans-serif" font-size="19" fill="#454b54" text-anchor="start">Two retrieval arms — hybrid vector-RAG and GraphRAG — run over the same corpus and are compared</text>
+<text x="60" y="205" font-family="'Helvetica Neue', Arial, sans-serif" font-size="19" fill="#454b54" text-anchor="start">head-to-head, orchestrated by a LangGraph state machine with a refuse-vs-generate confidence gate.</text>
+<rect x="60" y="250" width="150" height="72" rx="3" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="78" y="288" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="26" fill="#7a2e3a" text-anchor="start">2</text>
+<text x="78" y="308" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10.5" letter-spacing="1" fill="#454b54" text-anchor="start">RETRIEVAL ARMS</text>
+<rect x="224" y="250" width="150" height="72" rx="3" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="242" y="288" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="26" fill="#7a2e3a" text-anchor="start">16</text>
+<text x="242" y="308" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10.5" letter-spacing="1" fill="#454b54" text-anchor="start">TEST QUERIES</text>
+<rect x="388" y="250" width="150" height="72" rx="3" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="406" y="288" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="26" fill="#7a2e3a" text-anchor="start">1000</text>
+<text x="406" y="308" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10.5" letter-spacing="1" fill="#454b54" text-anchor="start">CORPUS RECORDS</text>
+<rect x="552" y="250" width="150" height="72" rx="3" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="570" y="288" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="26" fill="#7a2e3a" text-anchor="start">6</text>
+<text x="570" y="308" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10.5" letter-spacing="1" fill="#454b54" text-anchor="start">EVAL METRICS</text>
+<rect x="716" y="250" width="150" height="72" rx="3" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="734" y="288" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="26" fill="#7a2e3a" text-anchor="start">12</text>
+<text x="734" y="308" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10.5" letter-spacing="1" fill="#454b54" text-anchor="start">CORE MODULES</text>
+<line x1="60" y1="366" x2="1540" y2="366" stroke="#c9cdc9"/>
+<text x="60" y="410" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#171a1f" text-anchor="start">Two Arms, One Corpus</text>
+<text x="60" y="436" font-family="'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#454b54" text-anchor="start">Both arms run in parallel on every query — a shared confidence gate, not either arm alone, decides whether to answer or refuse.</text>
+<rect x="670.0" y="466" width="260" height="66" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="686.0" y="496" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="14" fill="#7a2e3a" text-anchor="start">parse_query</text>
+<text x="686.0" y="518" font-family="'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#454b54" text-anchor="start">Entry node</text>
+<path d="M800.0 532 L800.0 562.0" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M460.0 562.0 L1140.0 562.0" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M460.0 562.0 L460.0 586" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M454.0 580 L460.0 588 L466.0 580" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M1140.0 562.0 L1140.0 586" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M1134.0 580 L1140.0 588 L1146.0 580" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<rect x="150.0" y="592" width="620" height="92" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="166.0" y="622" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="14" fill="#7a2e3a" text-anchor="start">retrieve_vector</text>
+<text x="166.0" y="644" font-family="'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#454b54" text-anchor="start">Dense + BM25 → reciprocal rank fusion → cross-encoder rerank → top-5 chunks</text>
+<rect x="830.0" y="592" width="620" height="92" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="846.0" y="622" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="14" fill="#7a2e3a" text-anchor="start">retrieve_graph</text>
+<text x="846.0" y="644" font-family="'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#454b54" text-anchor="start">Entity match → 1-2 hop traversal → serialized subgraph</text>
+<path d="M460.0 684 L460.0 714.0" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M1140.0 684 L1140.0 714.0" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M460.0 714.0 L1140.0 714.0" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M800.0 714.0 L800.0 738" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M794.0 732 L800.0 740 L806.0 732" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<rect x="640.0" y="744" width="320" height="76" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="656.0" y="774" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="14" fill="#7a2e3a" text-anchor="start">confidence_gate</text>
+<text x="656.0" y="796" font-family="'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#454b54" text-anchor="start">Refuse vs. generate, per arm</text>
+<path d="M800.0 820 L800.0 850.0" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M640.0 850.0 L960.0 850.0" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M640.0 850.0 L640.0 874" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M634.0 868 L640.0 876 L646.0 868" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M960.0 850.0 L960.0 874" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<path d="M954.0 868 L960.0 876 L966.0 868" fill="none" stroke="#454b54" stroke-width="1.6" opacity="0.55"/>
+<rect x="510.0" y="880" width="260" height="66" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="526.0" y="910" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="14" fill="#7a2e3a" text-anchor="start">generate</text>
+<text x="526.0" y="932" font-family="'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#454b54" text-anchor="start">Grounded, cited answer</text>
+<rect x="830.0" y="880" width="260" height="66" rx="4" fill="#f1e2e2" stroke="#7a2e3a" stroke-dasharray="5,4"/>
+<text x="846.0" y="910" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="14" fill="#7a2e3a" text-anchor="start">refuse</text>
+<text x="846.0" y="932" font-family="'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#454b54" text-anchor="start">"I couldn't find this..."</text>
+<text x="60" y="1010" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#171a1f" text-anchor="start">File-by-File Index</text>
+<text x="60" y="1030" font-family="'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#454b54" text-anchor="start">Grouped the same way as docs/CODE_MAP.md.</text>
+<rect x="60" y="1054" width="728.0" height="213" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="78" y="1078" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="700" fill="#171a1f" text-anchor="start">Exhibit A — Entry &amp; Orchestration (app/)</text>
+<text x="78" y="1102" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">Home.py</text>
+<text x="92" y="1122" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">The Streamlit chat UI — the only query surface. No retrieval logic of its own.</text>
+<text x="78" y="1151" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">graph_flow.py</text>
+<text x="92" y="1171" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Builds the LangGraph state machine wiring both arms + the confidence gate.</text>
+<text x="78" y="1200" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">common/config.py</text>
+<text x="92" y="1220" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Central project-wide settings — models, chunk sizes, top-k, thresholds.</text>
+<rect x="812.0" y="1054" width="728.0" height="458" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="830.0" y="1078" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="700" fill="#171a1f" text-anchor="start">Exhibit B — Core Pipeline (app/core/)</text>
+<text x="830.0" y="1102" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">ingestion.py</text>
+<text x="844.0" y="1122" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Pulls PRs/issues/RFCs from the GitHub API, keeps structured metadata for the graph.</text>
+<text x="830.0" y="1151" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">chunking.py</text>
+<text x="844.0" y="1171" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Splits corpus text sized to the embedding model's capacity; code chunked separately.</text>
+<text x="830.0" y="1200" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">vector_store.py</text>
+<text x="844.0" y="1220" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">HybridVectorStore — dense embeddings fused with BM25 via reciprocal rank fusion.</text>
+<text x="830.0" y="1249" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">retrieval_vector.py</text>
+<text x="844.0" y="1269" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Hybrid retrieve → cross-encoder rerank → top-5 chunks (the vector-RAG arm).</text>
+<text x="830.0" y="1298" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">graph_build.py</text>
+<text x="844.0" y="1318" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Extracts entities/relationships (contributors, PRs, modules, skills) into a GraphStore.</text>
+<text x="830.0" y="1347" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">retrieval_graph.py</text>
+<text x="844.0" y="1367" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Entity match → 1-2 hop traversal → serialized subgraph (the GraphRAG arm).</text>
+<text x="830.0" y="1396" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">confidence_gate.py</text>
+<text x="844.0" y="1416" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">should_refuse() — a real graph branch, designed before the happy path.</text>
+<text x="830.0" y="1445" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">generation.py</text>
+<text x="844.0" y="1465" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Calls Claude with retrieved context to produce a grounded, cited answer.</text>
+<rect x="60" y="1287" width="728.0" height="311" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="78" y="1311" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="700" fill="#171a1f" text-anchor="start">Exhibit C — Evaluation</text>
+<text x="78" y="1335" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">evaluation.py</text>
+<text x="92" y="1355" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Hand-rolled LLM-judge: faithfulness, relevance, refusal-rate, latency on 16 queries.</text>
+<text x="78" y="1384" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">checkpoints.py</text>
+<text x="92" y="1404" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Fast per-stage sanity checks, each modeled on a real bug found the hard way.</text>
+<text x="78" y="1433" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">ragas_eval.py</text>
+<text x="92" y="1453" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">ragas Faithfulness + LLMContextPrecisionWithoutReference — an independent cross-check.</text>
+<text x="78" y="1482" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">scripts/run_eval.py</text>
+<text x="92" y="1502" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Builds both stores, runs the full comparison, writes results.json.</text>
+<text x="78" y="1531" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">scripts/run_ragas_eval.py</text>
+<text x="92" y="1551" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Same build, scored with ragas instead; writes ragas_results.json.</text>
+<rect x="812.0" y="1532" width="728.0" height="311" rx="4" fill="#f8f9f8" stroke="#c9cdc9"/>
+<text x="830.0" y="1556" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="700" fill="#171a1f" text-anchor="start">Exhibit D — Data &amp; Documentation</text>
+<text x="830.0" y="1580" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">data/corpus/raw/</text>
+<text x="844.0" y="1600" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Real GitHub data (langchain-ai/langchain) — 500 PRs + 500 issues/RFCs.</text>
+<text x="830.0" y="1629" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">data/eval/test_queries.json</text>
+<text x="844.0" y="1649" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">The 16-query comparison set (10 original + 6 edge cases).</text>
+<text x="830.0" y="1678" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">docs/PLAN.md</text>
+<text x="844.0" y="1698" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">Full architecture + eval plan — the source of truth other docstrings cite.</text>
+<text x="830.0" y="1727" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">docs/EVAL_RESULTS.md</text>
+<text x="844.0" y="1747" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">The full investigation log — every bug found, root cause, and fix.</text>
+<text x="830.0" y="1776" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12.5" fill="#7a2e3a" text-anchor="start">docs/PROJECT_WRITEUP.md</text>
+<text x="844.0" y="1796" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#454b54" text-anchor="start">The submission write-up, incl. the head-to-head comparison summary.</text>
+<line x1="60" y1="1883" x2="1540" y2="1883" stroke="#c9cdc9"/>
+<text x="60" y="1917" font-family="Georgia, 'Times New Roman', serif" font-size="19" font-weight="700" fill="#171a1f" text-anchor="start">Why hybrid, not pure dense</text>
+<circle cx="66" cy="1938" r="4.5" fill="#7a2e3a"/>
+<text x="82" y="1943" font-family="'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#454b54" text-anchor="start">Dense retrieval catches paraphrase / semantic intent, misses exact identifiers (PR numbers, usernames, error</text>
+<text x="82" y="1962" font-family="'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#454b54" text-anchor="start">codes).</text>
+<circle cx="66" cy="1984" r="4.5" fill="#7a2e3a"/>
+<text x="82" y="1989" font-family="'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#454b54" text-anchor="start">BM25 catches those exact identifiers, misses semantic intent. Fuse both, then rerank the merged top ~20 down</text>
+<text x="82" y="2008" font-family="'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#454b54" text-anchor="start">to 5.</text>
+<circle cx="66" cy="2030" r="4.5" fill="#7a2e3a"/>
+<text x="82" y="2035" font-family="'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#454b54" text-anchor="start">A RAG app that hallucinates when retrieval comes up empty is worse than one that says it doesn't know — the</text>
+<text x="82" y="2054" font-family="'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#454b54" text-anchor="start">refusal path was designed before the happy path.</text>
+<line x1="60" y1="2093" x2="1540" y2="2093" stroke="#c9cdc9"/>
+<text x="60" y="2119" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12" fill="#454b54" text-anchor="start">GraphRAG for Organizational Knowledge · Week 2 Project</text>
+<text x="1540" y="2119" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="12" fill="#454b54" text-anchor="end">github.com/neehall/week-2-project</text></svg>

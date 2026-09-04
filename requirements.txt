@@ -38,5 +38,10 @@ sentence-transformers>=2.2.0   # cross-encoder reranker
 networkx>=3.2
 # neo4j>=5.20.0                 # server-backed alternative, not implemented yet
 
-# Evaluation
-ragas>=0.1.0
+# Evaluation — ragas was declared but unused; app/core/ragas_eval.py now
+# wires it in as a second, independent judge alongside evaluation.py's
+# hand-rolled one (see that module's docstring). Needs an LLM wrapper --
+# langchain-anthropic, to match generation.py's Claude choice. Tested
+# against ragas 0.4.3.
+ragas>=0.4.0
+langchain-anthropic>=0.3.0

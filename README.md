@@ -138,8 +138,10 @@ app/
     generation.py                          # LLM call (Claude), grounded + cited
     evaluation.py                            # faithfulness / relevance / refusal-rate / latency scoring + KPI summary
     checkpoints.py                             # fast, cheap per-stage sanity checks; gates run_comparison()
+    ragas_eval.py                                # ragas Faithfulness + LLMContextPrecisionWithoutReference, an independent cross-check on evaluation.py's hand-rolled judge
 scripts/
   run_eval.py                # builds both stores from the committed corpus, runs run_comparison(), writes results.json
+  run_ragas_eval.py          # same, but scores with ragas instead; writes data/eval/ragas_results.json
 data/
   corpus/raw/               # pulled GitHub data (committed, re-pull via ingestion.py for fresher data)
   eval/
@@ -164,6 +166,7 @@ screenshots/                # the chat UI, working
 - [x] LangGraph orchestration — `parse_query -> {retrieve_vector, retrieve_graph} -> confidence_gate -> {generate, refuse}`
 - [x] 16-query eval harness (10 original + 6 edge cases) + comparison report (`docs/PROJECT_WRITEUP.md` section 2, `docs/EVAL_RESULTS.md`)
 - [x] Checkpoint evals per pipeline stage (`app/core/checkpoints.py`) — gates the full comparison, aborts before spending API calls if a stage is broken
+- [x] `ragas`-based evaluation (`app/core/ragas_eval.py`, `scripts/run_ragas_eval.py`) — Faithfulness + LLMContextPrecisionWithoutReference via the standardized `ragas` framework, reusing `evaluation.py`'s own retrieval+generation so it never re-runs either arm. Implemented and unit-verified against ragas' actual API (see the module's docstring for 3 real Claude-model compatibility fixes it needed); **not yet run live against this project's own corpus** — the `.env`'s `ANTHROPIC_API_KEY` returned 401 (invalid/expired) when last checked. Rotate the key, then run `PYTHONPATH=. python scripts/run_ragas_eval.py --limit 4` for a cheap first check before the full 16-query run.
 
 ## Data provenance
 

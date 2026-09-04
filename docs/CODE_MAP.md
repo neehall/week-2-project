@@ -44,6 +44,7 @@ LangGraph state machine with a refuse-vs-generate confidence gate.
 | [`app/core/generation.py`](../app/core/generation.py) | Calls Claude (Anthropic SDK) with retrieved context from either arm to produce a grounded, cited answer — every claim should trace back to a specific chunk (vector arm) or node/edge (graph arm), which is what `evaluation.py`'s faithfulness score checks. |
 | [`app/core/evaluation.py`](../app/core/evaluation.py) | Runs both arms against the 10-query comparison set (`data/eval/test_queries.json`) and LLM-judges each answer on faithfulness, relevance, correct-refusal-rate, and latency. `run_comparison()` and `summarize_results()` produce the numbers the write-up is based on. |
 | [`app/core/checkpoints.py`](../app/core/checkpoints.py) | Fast, cheap sanity checks (`check_ingestion`, `check_chunking`, `check_vector_store`, ... `check_generation`) run between pipeline stages, each modeled on a real bug found the hard way (missing PR-number embedding, Chroma's batch-size limit, generation's token budget exhausted by thinking, a corpus/query-set mismatch — see `EVAL_RESULTS.md`). Catches the same class of failure in seconds instead of after a full ~20-call LLM-judged comparison run. |
+| [`app/core/ragas_eval.py`](../app/core/ragas_eval.py) | `run_ragas_comparison()` — scores both arms with the `ragas` framework's `Faithfulness` and `LLMContextPrecisionWithoutReference` metrics, reusing `evaluation.py`'s own `_run_vector_arm`/`_run_graph_arm` so it never re-runs retrieval or generation. An independent, standardized cross-check on `evaluation.py`'s hand-rolled judge. See its docstring for 3 real Claude-model compatibility fixes it needed. |
 
 ---
 
@@ -83,6 +84,7 @@ LangGraph state machine with a refuse-vs-generate confidence gate.
 | [`requirements.txt`](../requirements.txt) | Python dependencies (LangGraph, LangChain, Anthropic SDK, sentence-transformers, rank-bm25, a cross-encoder reranker, Streamlit, etc.). |
 | [`run.sh`](../run.sh) | Local launch script. |
 | [`scripts/run_eval.py`](../scripts/run_eval.py) | Builds both stores from the committed corpus and runs `evaluation.run_comparison()` over the full query set, writing `data/eval/results.json`. |
+| [`scripts/run_ragas_eval.py`](../scripts/run_ragas_eval.py) | Same build, but scores with `ragas_eval.run_ragas_comparison()` instead, writing `data/eval/ragas_results.json`. Takes `--limit N` for a cheap subset run. |
 | [`runtime.txt`](../runtime.txt) | Pinned Python runtime version for hosted deploy. |
 | [`.env.example`](../.env.example) | Template for required env vars (`ANTHROPIC_API_KEY`, GitHub token for ingestion, etc.). |
 | [`screenshots/`](../screenshots/) | App screenshots for the write-up. |
